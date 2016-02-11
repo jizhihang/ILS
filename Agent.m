@@ -32,4 +32,3 @@ classdef (Abstract) Agent < handle
     end
     
 end
-

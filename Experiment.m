@@ -3,7 +3,8 @@ classdef Experiment < handle
 % It will run the experimenter interface, track metrics, establish
 % communication with remote agents, and initialize the control.
     
-    properties        
+    properties
+        imdir % Directory of image database
         control % Control object
         localPort % Permanent port of local control
         socket % Direct interface socket of local control
@@ -17,7 +18,7 @@ classdef Experiment < handle
         %------------------------------------------------------------------
         % Class constructor:
         
-        function E = Experiment(X,Y)
+        function E = Experiment(imageDirectory,X,Y)
         % EXPERIMENT is the class constructor which will set the data and
         % label properties (not necessary), instantiate a control object,
         % and scan for agents.
@@ -25,11 +26,17 @@ classdef Experiment < handle
             E.control = Control('all','sum');
             E.socket = udp('0.0.0.0','LocalHost','localHost',...
                 'LocalPort',E.localPort);
-            if nargin == 2
-                addData(E.control,X);
-                E.labels = Y(:);
+            if nargin >= 1
+                E.imdir = dir(imageDirectory);
+                E.imdir = E.imdir(3:end);
+                if nargin == 3
+                    addData(E.control,X);
+                    E.labels = Y(:);
+                else
+                    E.labels = [];
+                end
             else
-                E.labels = [];
+                error('Must specify an image directory.')
             end
             scanForAgents(E);
         end
@@ -81,7 +88,8 @@ classdef Experiment < handle
         end
         
         function newData(obj,X,Y)
-        % NEWDATA calls the ADDDATA function from the control object.
+        % NEWDATA calls the ADDDATA function from the control object. X
+        % must reference images from the existing image directory.
             obj.control = addData(obj.control,X);
             obj.labels = [obj.labels;Y(:)];
         end
@@ -108,4 +116,3 @@ classdef Experiment < handle
     end
     
 end
-

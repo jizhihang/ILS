@@ -74,4 +74,3 @@ classdef LocalAgent < Agent
     end
     
 end
-

@@ -1,36 +1,39 @@
-classdef RemoteAgent < Agent
+classdef (Abstract) RemoteAgent < Agent
 % REMOTEAGENT is the remote agent and a child of the Agent superclass.
 % It will receive image classification assignments from the local agent,
 % classify the images, and return the results.
     
     properties
+        imdir % Image directory
         port % Local port of remote agent
         socket % Direct interface communication with local agent
         status % Boolean variable which signifies a connection with the local agent
-    end
-    
-    properties (Access = private)
-        accuracy % **set accuracy for development**
     end
     
     methods
         % -----------------------------------------------------------------
         % Class constructor:
         
-        function A = RemoteAgent(type,remotePort)
+        function A = RemoteAgent(type,remotePort,imageDirectory)
         % REMOTEAGENT is the class constructor for a remote agent. It will
         % be called on a remote host and broadcast its IP address and port
         % to the machine which is hosting the experiment. Upon establishing
         % a connection with the experiment, it will wait for a message from
         % a local agent.
             A@Agent(type);
-            A.accuracy = rand();
             A.status = false;
             A.port = remotePort;
-            if nargin == 2
+            if nargin >= 2
                 % **This has to be hard-coded for the time being**
                 localHost = 'localHost';
                 localPort = 2000;
+                if nargin == 3
+                    addpath(imageDirectory);
+                    A.imdir = dir(imageDirectory);
+                    A.imdir = A.imdir(3:end);
+                else
+                    A.imdir = '';
+                end
             else
                 error('Not enough input arguments to create RemoteAgent.')
             end
@@ -62,24 +65,6 @@ classdef RemoteAgent < Agent
         
         %------------------------------------------------------------------
         % Dependencies:
-        
-        function Y = classifyImages(obj,src,event)
-        % CLASSIFYIMAGES is a callback function which is initiated by the
-        % receipt of an image assignment from a local agent. It will
-        % classify images according to the prescribed classification
-        % function or terminate the agent upon receipt of the 'complete'
-        % command.
-            X = fread(obj.socket);
-            if strcmp(char(X)','complete')
-                terminate(obj);
-            else
-                Y = -1*ones(1,length(X));
-                Y(rand(1,length(X))<obj.accuracy) = 1;
-                fwrite(obj.socket,Y);
-                fprintf('Agent completed classification of %u images.\n',...
-                    length(X))
-            end
-        end
         
         function waitForAgent(obj)
         % WAITFORAGENT scans all IP broadcasts for an incoming message from
@@ -115,8 +100,23 @@ classdef RemoteAgent < Agent
             fprintf('Agent terminated.\n')
         end
         
+        function image = getImages(obj,index)
+        % GETIMAGE loads an image from the specified directory. It can take
+        % a vector argument and will return a cell array of images.
+            if strcmp(obj.imdir,'')
+                warning('Function not available for prototype.');
+            end
+            image = cell(length(index),1);
+            for i = 1:length(index)
+                image{i} = imread(obj.imdir(index(i)).name);
+            end
+        end
+        
         %------------------------------------------------------------------
     end
     
+    methods (Abstract)
+        classifyImages(obj,src,event)
+    end
+    
 end
-
