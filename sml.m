@@ -1,4 +1,4 @@
-function Y = sml(X)
+function [Y,alpha,beta] = sml(X)
 % SML takes a matrix of binary classification labels (number of agents by
 % number of samples) and uses the spectral meta-learner with
 % expectation-maximization to generate a maximum likelihood estimate of the
@@ -39,7 +39,7 @@ function Y = sml(X)
         end
         alpha = (psi.*eta)./((1-psi).*(1-eta));
         beta = (psi.*(1-psi))/(eta.*(1-eta));
-        Y = sign(log(alpha)'*Xhat+sum(beta));
+        Y = sign(log(alpha)'*Xhat+sum(log(beta)));
         k = k+1;
         if norm(Y-Yhat,1) < 2*e*numSamples || k > 50
             flag = true;
