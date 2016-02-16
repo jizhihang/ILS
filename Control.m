@@ -113,7 +113,12 @@ classdef Control < handle
         % real-time. Options: 'SML', 'sum', 'MV'.
             switch obj.fusion
                 case 'SML'
-                    error('Sorry, not ready yet.')
+                    try
+                        y = sml(obj.results);
+                    catch
+                        warning('Something was wrong with SML. Using sum.');
+                        y = sum(obj.results,2);
+                    end
                 case 'sum'
                     y = sum(obj.results,2);
                 case 'MV'
