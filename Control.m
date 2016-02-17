@@ -50,7 +50,7 @@ classdef Control < handle
             index = length(obj.agents)+1;
             obj.agents{index} = LocalAgent(type,localPort,remoteHost,...
                 remotePort,obj);
-            obj.flag{index} = false;
+            obj.flag(index) = false;
             updateResults(obj);
         end
         
