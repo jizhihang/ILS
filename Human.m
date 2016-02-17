@@ -3,6 +3,9 @@ classdef Human < RemoteAgent
 % which the user provides binary classification of images.
     
     properties
+        hGui % structure for holding the gui handles
+        hFigure % handle to gui figure
+        pred_labels
     end
     
     methods
@@ -14,6 +17,9 @@ classdef Human < RemoteAgent
                 error('Too few parameters for class construction.');
             end
             A@RemoteAgent('human',remotePort,imageDirectory);
+            
+            % create Labeling interface for human agent
+            [A.hFigure, A.hGui] = human_interface;
         end
         
         %------------------------------------------------------------------
@@ -29,14 +35,22 @@ classdef Human < RemoteAgent
                 terminate(obj);
             else
                 Y = zeros(length(X),1);
-                images = getImages(X); % gets images from directory
+                images = getImages(obj,X); % gets images from directory
+                
                 % classify images
-                fwrite(obj.socket,Y(:));
-                fprintf('Human completed classification of %u images.\n',...
-                    length(X))
+                human_interface('displayImages',obj.hGui,1,images,obj);  % show image to user
             end
         end
         
+        
+        function sendImageLabels(obj,labels)
+        % SENTIMAGELABELS is a function called from the human interface gui
+        % that will send the classified image labels back to the control
+        % server as soon as the human agent has finished.
+            fwrite(obj.socket,labels(:));
+            fprintf('Human completed classification of %u images.\n',...
+                length(labels))
+        end
         %------------------------------------------------------------------
         
     end
