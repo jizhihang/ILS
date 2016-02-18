@@ -3,7 +3,7 @@ To run: <br />
 1. Open a MATLAB terminal for the local server. <br />
 2. Open a MATLAB terminal for each remote agent. <br />
 3. Initialize experiment environment by creating an environment, <br />
-    "E = Experiment(imageDatabasePath,data,labels);" <br />
+   </t> "E = Experiment(imageDatabasePath,data,labels);" <br />
 4. Initialize agents in each MATLAB terminal. <br />
 For Human agents: <br />
     "H = Human(imageDatabasePath,port);" <br />
