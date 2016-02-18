@@ -15,14 +15,14 @@ To run:
 
 ## Dependencies
 
-This code has been written using Matlab 2014a and later and has not been tested using ealerier versions. Additionally, you must have access to matlab's image processing toolbox, optimization toolbox and instrument control toolbox. 
+This code has been written using Matlab 2014a and later and has not been tested using earlier versions. Additionally, you must have access to matlab's image processing toolbox, optimization toolbox and instrument control toolbox. 
 
 This code requires the MatConvNet and LibSVM software packages.
 
-MatConvNet is a deeplearning framework for matlab. It can be downloaded and installed here:
+MatConvNet is a deep-learning framework for matlab. It can be downloaded and installed here:
 (http://www.vlfeat.org/matconvnet/install/)
 
-LibSVM is a support vector machine library that contains mexfiles for running in matlab. libsvm can be downloaded from here:
+LibSVM is a support vector machine library that contains mexfiles for building SVMs in matlab. LibSVM can be downloaded from here:
 (https://www.csie.ntu.edu.tw/~cjlin/libsvm/)
 
 
