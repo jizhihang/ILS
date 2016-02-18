@@ -1,6 +1,4 @@
 # ILS - Image Labeling System
-Image Labeling System
-
 To run: <br />
 1. Open a MATLAB terminal for the local server. <br />
 2. Open a MATLAB terminal for each remote agent. <br />
@@ -14,7 +12,6 @@ To run: <br />
 5. Begin experiment, "startExperiment(E);" <br />
 
 ## Dependencies
-
 This code has been written using Matlab 2014a and later and has not been tested using earlier versions. Additionally, you must have access to matlab's image processing toolbox, optimization toolbox and instrument control toolbox. 
 
 This code requires the MatConvNet and LibSVM software packages.
