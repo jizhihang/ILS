@@ -1,4 +1,4 @@
-# ILS
+# ILS - Image Labeling System
 Image Labeling System
 
 To run:
