@@ -5,10 +5,10 @@ To run: <br />
 3. Initialize experiment environment by creating an environment, <br />
     "E = Experiment(imageDatabasePath,data,labels);" <br />
 4. Initialize agents in each MATLAB terminal. <br />
-5. For Human agents: <br />
+For Human agents: <br />
     "H = Human(imageDatabasePath,port);" <br />
-6. For Computer-Vision agents: <br />
-7.  "CV = ComputerVision(imageDatabasePath,port);" <br />
+For Computer-Vision agents: <br />
+    "CV = ComputerVision(imageDatabasePath,port);" <br />
 5. Begin experiment, "startExperiment(E);" <br />
 
 ## Dependencies
