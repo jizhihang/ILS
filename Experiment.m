@@ -5,6 +5,7 @@ classdef Experiment < handle
     
     properties
         imdir % Directory of image database
+        gui % GUI handle
         control % Control object
         localPort % Permanent port of local control
         socket % Direct interface socket of local control
@@ -21,11 +22,12 @@ classdef Experiment < handle
         function E = Experiment(imageDirectory,X,Y)
         % EXPERIMENT is the class constructor which will set the data and
         % label properties (not necessary), instantiate a control object,
-        % and scan for agents.
+        % open a GUI, and scan for agents.
             E.localPort = 2000; % **Hard-coded**
             E.control = Control('all','sum');
             E.socket = udp('0.0.0.0','LocalHost','localHost',...
                 'LocalPort',E.localPort);
+            E.gui = experiment_interface(E);
             if nargin >= 1
                 E.imdir = dir(imageDirectory);
                 E.imdir = E.imdir(3:end);
@@ -38,6 +40,7 @@ classdef Experiment < handle
             else
                 error('Must specify an image directory.')
             end
+            
             scanForAgents(E);
         end
         
