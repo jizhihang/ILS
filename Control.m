@@ -4,9 +4,9 @@ classdef Control < handle
     
     properties
         agents % Array of LocalAgent objects
-        data % **Not sure how to handle this yet: maybe path and indices**
-        assignment % **Options: 'random', 'GAP', etc.**
-        fusion % **Options: 'sum', 'sml', 'mv', etc.**
+        data % Array of image indices
+        assignment % Assignment type (options): 'random', 'gap', 'all', 'serial'
+        fusion % Fusion type (ptions): 'sum', 'sml', 'mv'
     end
     
     properties (Access = private)
