@@ -90,7 +90,7 @@ classdef (Abstract) RemoteAgent < Agent
                 localPort = event.Data.DatagramPort;
             else
                 localHost = obj.socket.DatagramAddress;
-                localPort = event.Data.DatagramPort;
+                localPort = obj.socket.DatagramPort;
             end
             fread(obj.socket);
             fclose(obj.socket);

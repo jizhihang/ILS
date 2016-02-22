@@ -20,14 +20,6 @@ classdef (Abstract) Agent < handle
         end
         
         %------------------------------------------------------------------
-        % Property access:
-        
-        function t = get.type(obj)
-        % GET.TYPE is the external property access function for other
-        % objects to query the type of an agent.
-            t = obj.type;
-        end
-        %------------------------------------------------------------------
         
     end
     
