@@ -38,7 +38,7 @@ function gui = experiment_interface(experiment)
     % object
         str = source.String;
         val = source.Value;
-        experiment.control.assignment = str{val};
+        changeAssignment(experiment.control,str{val});
     end
 
     function fusionMenu_callback(source,eventdata) 

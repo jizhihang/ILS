@@ -9,10 +9,6 @@ classdef LocalAgent < Agent
         control % Associated control object
     end
     
-    events
-        classificationComplete % Event which marks the return of classification results from the remote agent
-    end
-    
     methods
         %------------------------------------------------------------------
         % Class constructor:
@@ -38,14 +34,14 @@ classdef LocalAgent < Agent
         %------------------------------------------------------------------
         % System-level:
         
-        function assignImages(obj,X)
-        % ASSIGNIMAGES will send image assignments to the remote agent
+        function sendImages(obj,X)
+        % SENDIMAGES will send image assignments to the remote agent
         % for classification.
             obj.socket.readasyncmode = 'continuous';
-            obj.socket.datagramreceivedfcn = @obj.notifyControl;
+            obj.socket.datagramreceivedfcn = @obj.resultsReady;
             fwrite(obj.socket,X);
         end
-        function Y = getResults(obj)
+        function Y = readResults(obj)
         % GETRESULTS will retrieve classification results from the remote
         % agent.
             Y = fread(obj.socket);
@@ -63,11 +59,10 @@ classdef LocalAgent < Agent
         %------------------------------------------------------------------
         % Dependencies:
         
-        function notifyControl(obj,IO,event)
-        % NOTIFYCONTROL lets the control object know that the remote agent
-        % has completed classifying assigned images. The control object
-        % will then initiate the classification retrieval.
-            notify(obj,'classificationComplete');
+        function resultsReady(obj,src,event)
+        % RESULTSREADY calls the handleresults function from the
+        % assignment class
+            handleResults(obj.control.assignment,obj);
         end
         
         %------------------------------------------------------------------

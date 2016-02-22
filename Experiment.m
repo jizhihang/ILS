@@ -9,6 +9,7 @@ classdef Experiment < handle
         control % Control object
         localPort % Permanent port of local control
         socket % Direct interface socket of local control
+        listener % Listens for end of experiment notification
     end
     
     properties (Access = private)
@@ -23,11 +24,13 @@ classdef Experiment < handle
         % EXPERIMENT is the class constructor which will set the data and
         % label properties (not necessary), instantiate a control object,
         % open a GUI, and scan for agents.
-            E.localPort = 2000; % **Hard-coded**
-            E.control = Control('all','sum');
+            E.localPort = 2004; % **Hard-coded**
+            E.control = Control;
             E.socket = udp('0.0.0.0','LocalHost','localHost',...
                 'LocalPort',E.localPort);
             E.gui = experiment_interface(E);
+            E.listener = addlistener(E.control,'experimentComplete',...
+                @E.endExperiment);
             if nargin >= 1
                 E.imdir = dir(imageDirectory);
                 E.imdir = E.imdir(3:end);
@@ -40,7 +43,6 @@ classdef Experiment < handle
             else
                 error('Must specify an image directory.')
             end
-            
             scanForAgents(E);
         end
         
@@ -53,8 +55,7 @@ classdef Experiment < handle
         % initiated by a button on the experimenter interface.
             fclose(obj.socket);
             delete(obj.socket);
-            addlistener(obj.control,'complete',@obj.endExperiment); % This should happen in control
-            run(obj.control);
+            start(obj.control);
         end
         
         function endExperiment(obj,src,event)
@@ -62,6 +63,8 @@ classdef Experiment < handle
         % interface connections. It will be initiated by a button on the
         % experimenter interface.
             terminate(obj.control);
+            delete(obj.listener);
+            close(obj.gui);
             fprintf('Experiment complete.\n')
         end
         

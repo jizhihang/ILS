@@ -26,7 +26,7 @@ classdef (Abstract) RemoteAgent < Agent
             if nargin >= 2
                 % **This has to be hard-coded for the time being**
                 localHost = 'localHost';
-                localPort = 2000;
+                localPort = 2004;
                 if nargin == 3
                     addpath(imageDirectory);
                     A.imdir = dir(imageDirectory);
@@ -73,6 +73,10 @@ classdef (Abstract) RemoteAgent < Agent
             obj.socket = udp('0.0.0.0','LocalHost','localHost',...
                 'LocalPort',obj.port);
             fopen(obj.socket);
+            if obj.socket.bytesAvailable > 0
+                updateSocket(obj);
+                return
+            end
             obj.socket.readasyncmode = 'continuous';
             obj.socket.datagramreceivedfcn = @obj.updateSocket;
         end
@@ -81,11 +85,16 @@ classdef (Abstract) RemoteAgent < Agent
         % UPDATESOCKET creates the direct interface connection with the
         % local agent, sets the status field to true, and starts the remote
         % agent.
+            if nargin > 1
+                localHost = event.Data.DatagramAddress;
+                localPort = event.Data.DatagramPort;
+            else
+                localHost = obj.socket.DatagramAddress;
+                localPort = event.Data.DatagramPort;
+            end
             fread(obj.socket);
             fclose(obj.socket);
             delete(obj.socket);
-            localHost = event.Data.DatagramAddress;
-            localPort = event.Data.DatagramPort;
             obj.socket = udp(localHost,localPort,'LocalHost',...
                 'localHost','LocalPort',obj.port);
             obj.status = true;

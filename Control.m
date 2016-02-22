@@ -7,11 +7,7 @@ classdef Control < handle
         data % Array of image indices
         assignment % Assignment type (options): 'random', 'gap', 'all', 'serial'
         fusion % Fusion type (ptions): 'sum', 'sml', 'mv'
-    end
-    
-    properties (Access = private)
         results % Table of classification results (numAgents x numTrials)
-        flag % Boolean array which tracks assignment completion (numAgents x 1)
     end
     
     properties (Dependent)
@@ -19,28 +15,21 @@ classdef Control < handle
     end
     
     events
-        complete % Event which triggers the end of experiment
+        experimentComplete % Event which triggers the end of experiment
     end
     
     methods
         %------------------------------------------------------------------
         % Class constructor:
         
-        function C = Control(assignmentMethod,fusionMethod)
+        function C = Control
         % CONTROL is the class constructor. It will set the assignment and
         % fusion methods.
             C.fusion = 'sum';
-            C.assignment = 'all';
-            if nargin >= 1
-                C.assignment = assignmentMethod;
-                if nargin == 2
-                    C.fusion = fusionMethod;
-                end
-            end
+            C.assignment = All(C);
             C.data = [];
             C.agents = cell(0);
             C.results = [];
-            C.flag = false(0);
         end
         
         function addAgent(obj,type,localPort,remoteHost,remotePort)
@@ -50,7 +39,6 @@ classdef Control < handle
             index = length(obj.agents)+1;
             obj.agents{index} = LocalAgent(type,localPort,remoteHost,...
                 remotePort,obj);
-            obj.flag(index) = false;
             updateResults(obj);
         end
         
@@ -59,6 +47,25 @@ classdef Control < handle
         % results field.
             obj.data = [obj.data;newData(:)];
             updateResults(obj);
+        end
+        
+        function changeAssignment(obj,assignmentType)
+        % CHANGEASSIGNMENT updates the assignment object for control
+            if ~strcmp(obj.assignment.type,assignmentType)
+                delete(obj.assignment);
+                switch assignmentType
+                    case 'all'
+                        obj.assignment = All(obj);
+                    case 'random'
+                        obj.assignment = Random(obj);
+                    case 'serial'
+                        obj.assignment = Serial(obj);
+                    case 'gap'
+                        obj.assignment = GAP(obj);
+                    otherwise
+                        error('Not a valid assignment type.')
+                end
+            end
         end
         
         function updateResults(obj)
@@ -76,23 +83,10 @@ classdef Control < handle
         %------------------------------------------------------------------
         % System-level:
         
-        function run(obj)
-        % RUN will populate the results table using the given assignment
-        % method. Options: 'all'.
-            switch obj.assignment
-                case 'all'
-                    agentIndex = 1:length(obj.agents);
-                    listener = cell(length(obj.agents),1);
-                    obj.flag(:) = false;
-                    for i = agentIndex
-                        listener{i} = addlistener(obj.agents{i},...
-                            'classificationComplete',...
-                            @obj.getResults);
-                        assignImages(obj.agents{i},obj.data);
-                    end
-                otherwise
-                    error('Not a valid option for assignment.')
-            end
+        function start(obj)
+        % START will populate the results property using the given
+        % assignment module
+            handleAssignment(obj.assignment);
         end
         
         function terminate(obj)
@@ -112,7 +106,7 @@ classdef Control < handle
         % given fusion function to determine the pseudo-labels in
         % real-time. Options: 'SML', 'sum', 'MV'.
             switch obj.fusion
-                case 'SML'
+                case 'sml'
                     try
                         y = sml(obj.results);
                     catch
@@ -121,36 +115,12 @@ classdef Control < handle
                     end
                 case 'sum'
                     y = sum(obj.results,2);
-                case 'MV'
+                case 'mv'
                     y = mode(obj.results,2);
                 otherwise
                     error('Not a valid fusion method.');
             end
             Y = y;
-        end
-        
-        %------------------------------------------------------------------
-        % Dependencies:
-        
-        function getResults(obj,src,event)
-        % GETRESULTS retrieves the classification results following
-        % assignment in the RUN method. It works in conjuction with RUN to
-        % populate the results table.
-            switch obj.assignment
-                case 'all'
-                    index = false(length(obj.agents),1);
-                    for i = 1:length(obj.agents)
-                        index(i) = eq(obj.agents{i},src);
-                    end
-                    obj.results(index,:) = getResults(src)';
-                    obj.flag(index) = true;
-                    fprintf('Results received from Agent %u.\n',find(index));
-                    if all(obj.flag)
-                        notify(obj,'complete');
-                    end
-                otherwise
-                    error('Not a valid assignment policy.');
-            end
         end
         
         %------------------------------------------------------------------
