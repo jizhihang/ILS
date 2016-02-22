@@ -1,5 +1,13 @@
 classdef (Abstract) Assignment < handle
-% ASSIGNMENT
+% ASSIGNMENT is the superclass of all assignment types. It has a connection
+% to the control object and specifies the assignment type. Natively, all
+% assignments have an assignimage function which takes as an argument a
+% boolean assignment matrix of size numAgents by numImages. Additionally,
+% all sub-classes must specify functions, handleAssignment and
+% handleResults. These are the interface functions for use by the control
+% and local agent objects. Additional properties for process management may
+% be necessary in subclass (eg. iteration counter, iteraction complete
+% event, etc.)
     
     properties
         control % Associated control object

@@ -1,6 +1,9 @@
 classdef Control < handle
-% CONTROL contains the local agents and data. It executes the assignment
-% and fusion according to the object properties.
+% CONTROL contains the local agents and data as well as the assignment
+% object and fusion and results properties. It tracks the results and
+% manages communication between all agents throughout the experiment. The
+% experiment is run through the logic provided by handleAssignment and
+% handleResults functions in the assignment object.
     
     properties
         agents % Array of LocalAgent objects
@@ -23,8 +26,8 @@ classdef Control < handle
         % Class constructor:
         
         function C = Control
-        % CONTROL is the class constructor. It will set the assignment and
-        % fusion methods.
+        % CONTROL is the class constructor. It will set the preliminary
+        % assignment and fusion methods.
             C.fusion = 'sum';
             C.assignment = All(C);
             C.data = [];
@@ -34,7 +37,7 @@ classdef Control < handle
         
         function addAgent(obj,type,localPort,remoteHost,remotePort)
         % ADDAGENT will add a local agent to the agents array by calling
-        % the class constructor of LOCALAGENT and update the size of the
+        % the class constructor of local agent and update the size of the
         % results field.
             index = length(obj.agents)+1;
             obj.agents{index} = LocalAgent(type,localPort,remoteHost,...
@@ -50,20 +53,21 @@ classdef Control < handle
         end
         
         function changeAssignment(obj,assignmentType)
-        % CHANGEASSIGNMENT updates the assignment object for control
+        % CHANGEASSIGNMENT updates the assignment object property
             if ~strcmp(obj.assignment.type,assignmentType)
                 delete(obj.assignment);
                 switch assignmentType
                     case 'all'
                         obj.assignment = All(obj);
-                    case 'random'
-                        obj.assignment = Random(obj);
-                    case 'serial'
-                        obj.assignment = Serial(obj);
-                    case 'gap'
-                        obj.assignment = GAP(obj);
+%                     case 'random'
+%                         obj.assignment = Random(obj);
+%                     case 'serial'
+%                         obj.assignment = Serial(obj);
+%                     case 'gap'
+%                         obj.assignment = GAP(obj);
                     otherwise
-                        error('Not a valid assignment type.')
+                        warning('Not a valid assignment type. Using all.');
+                        obj.assignment = All(obj);
                 end
             end
         end

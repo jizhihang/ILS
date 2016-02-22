@@ -1,5 +1,6 @@
 classdef All < Assignment
-% ALL 
+% ALL is an assignment type in which all images are assigned in batch to
+% all agents. It results in one iteration.
     
     properties
         iterationStatus % Boolean array which tracks the receipt of classification results
@@ -12,14 +13,17 @@ classdef All < Assignment
     
     methods
         function A = All(control)
-        % ALL is the class constructor for All. It calls the superclass
-        % constructor of Assignment.
+        % ALL is the class constructor for assignment type all. It calls
+        % the superclass constructor of assignment and adds a iteration
+        % listener.
             A@Assignment(control,'all');
             A.iterationListener = addlistener(A,'iterationComplete',...
                 @A.handleAssignment);
         end
         function handleAssignment(obj,src,event)
-        % HANDLEASSIGNMENT 
+        % HANDLEASSIGNMENT generates an all true assignment matrix and
+        % assigns the images on the first call. When called again, it ends
+        % the experiment.
             if nargin == 1
                 assignmentMatrix = true(length(obj.control.agents),...
                     length(obj.control.data));
@@ -29,7 +33,9 @@ classdef All < Assignment
             end                
         end
         function handleResults(obj,src)
-        % HANDLERESULTS
+        % HANDLERESULTS populates the results table in control as results
+        % are ready. When all results are returned, it calls
+        % handleAssignment.
             numAgents = length(obj.control.agents);
             index = false(numAgents,1);
             for i = 1:numAgents

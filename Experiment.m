@@ -66,6 +66,10 @@ classdef Experiment < handle
             delete(obj.listener);
             close(obj.gui);
             fprintf('Experiment complete.\n')
+            if ~isempty(obj.labels)
+                fprintf('Balanced accuracy: %.3f\n',...
+                    balancedAccuracy(obj.control.labels,obj.labels));
+            end
         end
         
         %------------------------------------------------------------------
