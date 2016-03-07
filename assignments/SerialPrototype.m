@@ -1,5 +1,6 @@
 classdef SerialPrototype < Assignment
-% SERIAL
+% SERIAL is a developmental assignment type for debugging Serial without
+% actual CV and human agents. It instead uses two Prototype agents.
     
     properties
         policy % n*1 vector which contains the release probability for each class
@@ -21,34 +22,13 @@ classdef SerialPrototype < Assignment
     methods
         function A = SerialPrototype(control,batch,policy)
         % SERIAL is the class constructor for assignment type serial. It
-        % calls the superclass constructor of Assignment.
+        % calls the superclass constructor of Assignment and initializes
+        % all necessary properties and listeners.
             A@Assignment(control,'serial');
-%             A.batchSize = input('Enter batch size to send to the CV: ');
-%             numClasses = input('Enter the number of unique classes in database: ');
-%             A.policy = zeros(numClasses,1);
-%             for i = 1:numClasses
-%                 A.policy(i) = input(['Enter probability of release to human for class ',i,':']);
-%             end
             A.humanIndex = 2;
             A.cvIndex = 1;
-%             A.batchSize = 2;
-%             A.policy = [0.5;0.5];
             A.batchSize = batch;
             A.policy = policy;
-%             for i = 1:length(control.agents)
-%                 switch control.agents{i}.type 
-%                     case 'human'
-%                         A.humanIndex = i;
-%                     case 'cv'
-%                         A.cvIndex = i;
-%                 end
-%             end
-%             if isempty(A.humanIndex) || isempty(A.cvIndex)
-%                 error('Serial policy requires a human and a CV agent.')
-%             end
-%             if A.humanIndex > 2 || A.cvIndex > 2
-%                 error('Too many agents have been added to the sytem.')
-%             end
             A.iterationListener = addlistener(A,'iterationComplete',...
                 @A.handleAssignment);
             A.humanUpdateListener = addlistener(A,'humanUpToDate',...
@@ -58,7 +38,13 @@ classdef SerialPrototype < Assignment
             A.humanAssignmentTracker = zeros(length(A.control.data),1);
         end
         function handleAssignment(obj,src,event)
-        % HANDLEASSIGNMENT
+        % HANDLEASSIGNMENT handles three different events. When notified by
+        % Experiment to start the experiment, it generates an initial
+        % assignment to the CV. On subsequent calls from iterationComplete,
+        % this is the event for the processing of results from the previous
+        % CV assignment, it assigns the next batch of images to the CV. On
+        % subsequent calls from humanUpToDate, it completes the experiment
+        % if all images have been assigned to the CV.
             if strcmp(event.EventName,'beginExperiment')
                 prevIndex = 0;
             else
@@ -66,7 +52,7 @@ classdef SerialPrototype < Assignment
             end
             if size(obj.assignmentMatrix,2) > prevIndex
                 if strcmp(event.EventName,'humanUpToDate')
-                    return
+                    return % CV has not yet seen all images
                 end
                 obj.assignmentMatrix(obj.cvIndex,:) = false;
                 try 
@@ -83,7 +69,10 @@ classdef SerialPrototype < Assignment
             end
         end
         function handleResults(obj,src,event)
-        % HANDLERESULTS
+        % HANDLERESULTS handles two events: classification results from the
+        % human or from the CV. These results are populated in Control and
+        % trigger distinct calls to handleAssignment through different
+        % events.
             fprintf('Results received from %s.\n',src.type);
             if eq(src,obj.control.agents{obj.humanIndex})
                 obj.humanAssignment = obj.humanAssignment + 1;
@@ -110,7 +99,8 @@ classdef SerialPrototype < Assignment
             end
         end
         function assignment = getHumanAssignment(obj,cvResults)
-        % GETHUMANASSIGNMENT
+        % GETHUMANASSIGNMENT assigns a subset of images to the human
+        % according to the CV results and policy.
             temp = false(size(cvResults));
             temp(cvResults==-1) = rand(size(temp(cvResults==-1))) < obj.policy(1);
             temp(cvResults==1) = rand(size(temp(cvResults==1))) < obj.policy(2);
