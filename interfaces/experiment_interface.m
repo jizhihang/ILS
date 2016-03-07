@@ -30,7 +30,11 @@ function gui = experiment_interface(experiment)
     
     function startButton_callback(source,eventdata) 
     % STARTBUTTON_CALLBACK starts the experiment
-        startExperiment(experiment)
+%         startExperiment(experiment)
+        fclose(experiment.socket);
+        delete(experiment.socket);
+        addResultsListener(experiment.control.assignment);
+        notify(experiment.control,'beginExperiment');
     end
 
     function assignmentMenu_callback(source,eventdata) 

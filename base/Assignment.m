@@ -13,11 +13,8 @@ classdef (Abstract) Assignment < handle
         control % Associated control object
         type % Assignment type (options): 'random', 'gap', 'all', 'serial'
         resultsListener % Listener for resultsReady event
+        beginExperimentListener % Listener for beginExperiment
     end
-%     
-%     events
-%         resultsReady % Event triggered when results arrive
-%     end
     
     methods
         function A = Assignment(control,type)
@@ -25,13 +22,17 @@ classdef (Abstract) Assignment < handle
         % will declare 
             A.control = control;
             A.type = type;
-            A.resultsListener = [];
+            A.resultsListener = cell(0);
+            A.beginExperimentListener = addlistener(control,...
+                'beginExperiment',@A.handleAssignment);
         end
         function addResultsListener(obj)
         % ADDRESULTSLISTENER addes the listener after the agents have been
         % added to the system.
-            obj.resultsListener = addlistener(obj.control.agents{1},...
-                'resultsReady',@obj.handleResults);
+            for i = 1:length(obj.control.agents)
+                obj.resultsListener{end+1} = addlistener(...
+                    obj.control.agents{i},'resultsReady',@obj.handleResults);
+            end
         end
         function assignImages(obj,assignmentMatrix)
         % ASSIGNIMAGES uses an assignmentmatrix (boolean numAgents x
@@ -46,7 +47,7 @@ classdef (Abstract) Assignment < handle
     end
     
     methods (Abstract)
-        handleAssignment(obj)
+        handleAssignment(obj,src,event)
         % GENERATEASSIGNMENT must also check for experiment completion and
         % notify control
         handleResults(obj,src,event)

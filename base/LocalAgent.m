@@ -43,11 +43,10 @@ classdef LocalAgent < Agent
         % for classification.
             obj.socket.readasyncmode = 'continuous';
             obj.socket.datagramreceivedfcn = @obj.resultsArrived;
-%             obj.socket.datagramreceivedfcn = @(obj,'resultsReady')notify;
             fwrite(obj.socket,X);
         end
         function Y = readResults(obj)
-        % GETRESULTS will retrieve classification results from the remote
+        % READRESULTS will retrieve classification results from the remote
         % agent.
             Y = fread(obj.socket);
         end
@@ -65,7 +64,7 @@ classdef LocalAgent < Agent
         % Dependencies:
         
         function resultsArrived(obj,src,event)
-        % RESULTSREADY calls the handleresults function from the
+        % RESULTSARRIVED calls the handleresults function from the
         % assignment class
             notify(obj,'resultsReady');
         end

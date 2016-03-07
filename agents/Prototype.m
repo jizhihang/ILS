@@ -30,7 +30,7 @@ classdef Prototype < RemoteAgent
             if strcmp(char(X)','complete')
                 terminate(obj);
             else
-                Y = -1*ones(length(X),1);
+                Y = zeros(length(X),1);
                 Y(rand(length(X),1)<obj.accuracy) = 1;
                 fwrite(obj.socket,Y(:));
                 fprintf('Prototype completed classification of %u images.\n',...

@@ -19,6 +19,7 @@ classdef Control < handle
     
     events
         experimentComplete % Event which triggers the end of experiment
+        beginExperiment % starts the experiment
     end
     
     methods
@@ -61,8 +62,8 @@ classdef Control < handle
                         obj.assignment = All(obj);
 %                     case 'random'
 %                         obj.assignment = Random(obj);
-%                     case 'serial'
-%                         obj.assignment = Serial(obj);
+                    case 'serial'
+                        obj.assignment = Serial(obj);
 %                     case 'gap'
 %                         obj.assignment = GAP(obj);
                     otherwise

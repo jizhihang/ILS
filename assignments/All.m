@@ -26,7 +26,7 @@ classdef All < Assignment
         % HANDLEASSIGNMENT generates an all true assignment matrix and
         % assigns the images on the first call. When called again, it ends
         % the experiment.
-            if nargin == 1
+            if strcmp(event.EventName,'beginExperiment')
                 assignmentMatrix = true(length(obj.control.agents),...
                     length(obj.control.data));
                 assignImages(obj,assignmentMatrix);

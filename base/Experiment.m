@@ -20,28 +20,26 @@ classdef Experiment < handle
         %------------------------------------------------------------------
         % Class constructor:
         
-        function E = Experiment(imageDirectory,X,Y)
+        function E = Experiment(X,Y,imageDirectory)
         % EXPERIMENT is the class constructor which will set the data and
         % label properties (not necessary), instantiate a control object,
         % open a GUI, and scan for agents.
-            E.localPort = 2004; % **Hard-coded**
+            E.localPort = 2006; % **Hard-coded**
             E.control = Control;
             E.socket = udp('0.0.0.0','LocalHost','localHost',...
                 'LocalPort',E.localPort);
             E.gui = experiment_interface(E);
             E.listener = addlistener(E.control,'experimentComplete',...
                 @E.endExperiment);
-            if nargin >= 1
-                E.imdir = dir(imageDirectory);
-                E.imdir = E.imdir(3:end);
+            addData(E.control,X);
+            if nargin > 1
+                E.labels = Y(:);
                 if nargin == 3
-                    addData(E.control,X);
-                    E.labels = Y(:);
-                else
-                    E.labels = [];
+                    E.imdir = dir(imageDirectory);
+                    E.imdir = E.imdir(3:end);
                 end
             else
-                error('Must specify an image directory.')
+                E.labels = [];
             end
             scanForAgents(E);
         end
@@ -49,14 +47,14 @@ classdef Experiment < handle
         %------------------------------------------------------------------
         % System-level:
         
-        function startExperiment(obj)
-        % STARTEXPERIMENT will begin the experiment, essentially telling
-        % the control that all agents and data are available. This will be
-        % initiated by a button on the experimenter interface.
-            fclose(obj.socket);
-            delete(obj.socket);
-            start(obj.control);
-        end
+%         function startExperiment(obj)
+%         % STARTEXPERIMENT will begin the experiment, essentially telling
+%         % the control that all agents and data are available. This will be
+%         % initiated by a button on the experimenter interface.
+%             fclose(obj.socket);
+%             delete(obj.socket);
+%             start(obj.control);
+%         end
         
         function endExperiment(obj,src,event)
         % ENDEXPERIMENT will end the experiment, shutting down all direct
