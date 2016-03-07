@@ -12,7 +12,12 @@ classdef (Abstract) Assignment < handle
     properties
         control % Associated control object
         type % Assignment type (options): 'random', 'gap', 'all', 'serial'
+        resultsListener % Listener for resultsReady event
     end
+%     
+%     events
+%         resultsReady % Event triggered when results arrive
+%     end
     
     methods
         function A = Assignment(control,type)
@@ -20,6 +25,13 @@ classdef (Abstract) Assignment < handle
         % will declare 
             A.control = control;
             A.type = type;
+            A.resultsListener = [];
+        end
+        function addResultsListener(obj)
+        % ADDRESULTSLISTENER addes the listener after the agents have been
+        % added to the system.
+            obj.resultsListener = addlistener(obj.control.agents{1},...
+                'resultsReady',@obj.handleResults);
         end
         function assignImages(obj,assignmentMatrix)
         % ASSIGNIMAGES uses an assignmentmatrix (boolean numAgents x
@@ -34,10 +46,10 @@ classdef (Abstract) Assignment < handle
     end
     
     methods (Abstract)
-        handleAssignment(obj,src,event)
+        handleAssignment(obj)
         % GENERATEASSIGNMENT must also check for experiment completion and
         % notify control
-        handleResults(obj)
+        handleResults(obj,src,event)
         % HANDLERESULTS must also check for iteration completion and call
         % handleassignemnt
     end

@@ -90,6 +90,7 @@ classdef Control < handle
         function start(obj)
         % START will populate the results property using the given
         % assignment module
+            addResultsListener(obj.assignment);
             handleAssignment(obj.assignment);
         end
         
@@ -118,9 +119,9 @@ classdef Control < handle
                         y = sum(obj.results,2);
                     end
                 case 'sum'
-                    y = sum(obj.results,2);
+                    y = sum(obj.results,1);
                 case 'mv'
-                    y = mode(obj.results,2);
+                    y = mode(obj.results,1);
                 otherwise
                     error('Not a valid fusion method.');
             end

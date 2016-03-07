@@ -5,6 +5,7 @@ classdef All < Assignment
     properties
         iterationStatus % Boolean array which tracks the receipt of classification results
         iterationListener % Listener for iterationComplete event
+        agentIndex % Boolean array for referencing agents
     end
     
     events
@@ -19,6 +20,7 @@ classdef All < Assignment
             A@Assignment(control,'all');
             A.iterationListener = addlistener(A,'iterationComplete',...
                 @A.handleAssignment);
+            A.agentIndex = false(length(control.agents),1);
         end
         function handleAssignment(obj,src,event)
         % HANDLEASSIGNMENT generates an all true assignment matrix and
@@ -32,18 +34,16 @@ classdef All < Assignment
                 notify(obj.control,'experimentComplete')
             end                
         end
-        function handleResults(obj,src)
+        function handleResults(obj,src,event)
         % HANDLERESULTS populates the results table in control as results
         % are ready. When all results are returned, it calls
         % handleAssignment.
-            numAgents = length(obj.control.agents);
-            index = false(numAgents,1);
-            for i = 1:numAgents
-                index(i) = eq(obj.control.agents{i},src);
+            for i = 1:length(obj.control.agents)
+                obj.agentIndex(i) = eq(obj.control.agents{i},src);
             end
-            obj.control.results(index,:) = readResults(src)';
-            obj.iterationStatus(index) = true;
-            fprintf('Results received from Agent %u.\n',find(index));
+            obj.control.results(obj.agentIndex,:) = readResults(src)';
+            obj.iterationStatus(obj.agentIndex) = true;
+            fprintf('Results received from Agent %u.\n',find(obj.agentIndex));
             if all(obj.iterationStatus)
                 notify(obj,'iterationComplete');
             end
