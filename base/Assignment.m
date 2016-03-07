@@ -52,7 +52,8 @@ classdef (Abstract) Assignment < handle
             end
         end
         function updateAssignment(obj)
-        % UPDATEASSIGNMENT
+        % UPDATEASSIGNMENT updates any fields that need to be adjusted when
+        % data or agents are added to the experiment.
             A.assignmentMatrix = false(length(obj.control.agents),length(obj.control.data));
         end
     end

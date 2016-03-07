@@ -65,16 +65,27 @@ classdef Control < handle
 %                         obj.assignment = Random(obj);
                     case 'serial'
                         try
-%                             obj.assignment = Serial(obj,varargin{1},...
-%                                 varargin{2});
+                            obj.assignment = Serial(obj,varargin{1},...
+                                varargin{2});
+                        catch
+                            warning('Inappropriate arguments for serial assignment.')
+                            obj.assignment = All(obj);
+                        end
+                    case 'serialPrototype'
+                        try
                             obj.assignment = SerialPrototype(obj,...
                                 varargin{1},varargin{2});
                         catch
                             warning('Inappropriate arguments for serial assignment.')
                             obj.assignment = All(obj);
                         end
-%                     case 'gap'
-%                         obj.assignment = GAP(obj);
+                    case 'gap'
+                        try
+                            obj.assignment = GAP(obj,varargin{1},varargin{2});
+                        catch
+                            warning('Inappropriate arguments for gap assignment.')
+                            obj.assignment = All(obj);
+                        end
                     otherwise
                         warning('Not a valid assignment type. Using all.');
                         obj.assignment = All(obj);

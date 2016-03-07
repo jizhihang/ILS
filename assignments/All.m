@@ -27,8 +27,7 @@ classdef All < Assignment
         % assigns the images on the first call. When called again, it ends
         % the experiment.
             if strcmp(event.EventName,'beginExperiment')
-                obj.assignmentMatrix = true(length(obj.control.agents),...
-                    length(obj.control.data));
+                obj.assignmentMatrix(:) = true;
                 assignImages(obj);
             else
                 notify(obj.control,'experimentComplete')

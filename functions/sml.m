@@ -1,4 +1,4 @@
-function [Y,alpha,beta] = sml(X)
+function [label,score,pi] = sml(X)
 % SML takes a matrix of binary classification labels (number of agents by
 % number of samples) and uses the spectral meta-learner with
 % expectation-maximization to generate a maximum likelihood estimate of the
@@ -12,41 +12,44 @@ function [Y,alpha,beta] = sml(X)
         indX(i) = length(unique(X(i,:))) > 1;
     end
     indY = true(numSamples,1);
-    for i = 1:NumSamples
+    for i = 1:numSamples
         indY(i) = all(unique(X(:,i)~=0));
     end
     if length(indY) < length(indX)
         error('Too few samples for the number of agents.')
     end
     Xhat = X(indX,indY);
-    [V,~] = eig(Xhat);
-    Yhat = sign(V(:,1)'*Xhat);
+    Q = cov(Xhat');
+    [V,~] = eig(Q);
+    Yhat = sign(V(:,1)'*X(indX,:));
     
     % Expectation-Maximization
     e = 0.05;
     k = 0;
-    flag = false;
+    flag = true;
     while flag
         psi = zeros(numAgents,1);
         for i = 1:numAgents
             psi(i) = numel(intersect(find(X(i,:)==1),find(Yhat==1)))/...
-                numSamples;
+                length(Yhat);
         end
         eta = zeros(numAgents,1);
         for i = 1:numAgents
             eta(i) = numel(intersect(find(X(i,:)==-1),find(Yhat==-1)))/...
-                numSamples;
+                length(Yhat);
         end
         alpha = (psi.*eta)./((1-psi).*(1-eta));
         beta = (psi.*(1-psi))/(eta.*(1-eta));
-        Y = sign(log(alpha)'*Xhat+sum(log(beta)));
+        score = log(alpha)'*X+sum(log(beta));
+        label = sign(score);
         k = k+1;
-        if norm(Y-Yhat,1) < 2*e*numSamples || k > 50
-            flag = true;
+        if norm(label-Yhat,1) < 2*e*numSamples || k > 50
+            flag = false;
         else
-            Yhat = Y;
+            Yhat = label;
         end
     end
+    pi = (psi+eta)/2;
 
 end
 
