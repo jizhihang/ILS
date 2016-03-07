@@ -1,4 +1,4 @@
-classdef Serial < Assignment
+classdef SerialPrototype < Assignment
 % SERIAL
     
     properties
@@ -20,7 +20,7 @@ classdef Serial < Assignment
     end
     
     methods
-        function A = Serial(control,batch,policy)
+        function A = SerialPrototype(control,batch,policy)
         % SERIAL is the class constructor for assignment type serial. It
         % calls the superclass constructor of Assignment.
             A@Assignment(control,'serial');
@@ -30,22 +30,26 @@ classdef Serial < Assignment
 %             for i = 1:numClasses
 %                 A.policy(i) = input(['Enter probability of release to human for class ',i,':']);
 %             end
+            A.humanIndex = 2;
+            A.cvIndex = 1;
+%             A.batchSize = 2;
+%             A.policy = [0.5;0.5];
             A.batchSize = batch;
             A.policy = policy;
-            for i = 1:length(control.agents)
-                switch control.agents{i}.type 
-                    case 'human'
-                        A.humanIndex = i;
-                    case 'cv'
-                        A.cvIndex = i;
-                end
-            end
-            if isempty(A.humanIndex) || isempty(A.cvIndex)
-                error('Serial policy requires a human and a CV agent.')
-            end
-            if A.humanIndex > 2 || A.cvIndex > 2
-                error('Too many agents have been added to the sytem.')
-            end
+%             for i = 1:length(control.agents)
+%                 switch control.agents{i}.type 
+%                     case 'human'
+%                         A.humanIndex = i;
+%                     case 'cv'
+%                         A.cvIndex = i;
+%                 end
+%             end
+%             if isempty(A.humanIndex) || isempty(A.cvIndex)
+%                 error('Serial policy requires a human and a CV agent.')
+%             end
+%             if A.humanIndex > 2 || A.cvIndex > 2
+%                 error('Too many agents have been added to the sytem.')
+%             end
             A.iterationListener = addlistener(A,'iterationComplete',...
                 @A.handleAssignment);
             A.humanUpdateListener = addlistener(A,'humanUpToDate',...
@@ -83,7 +87,7 @@ classdef Serial < Assignment
         function handleResults(obj,src,event)
         % HANDLERESULTS
             fprintf('Results received from %s.\n',src.type);
-            if strcmp(src.type,'human')
+            if eq(src,obj.control.agents{obj.humanIndex})
                 obj.humanAssignment = obj.humanAssignment + 1;
                 obj.control.results(obj.humanIndex,...
                     obj.humanAssignmentTracker==obj.humanAssignment)...

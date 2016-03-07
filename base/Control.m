@@ -53,9 +53,10 @@ classdef Control < handle
             updateResults(obj);
         end
         
-        function changeAssignment(obj,assignmentType)
+        function changeAssignment(obj,assignmentType,varargin)
         % CHANGEASSIGNMENT updates the assignment object property
             if ~strcmp(obj.assignment.type,assignmentType)
+                delete(obj.assignment.beginExperimentListener);
                 delete(obj.assignment);
                 switch assignmentType
                     case 'all'
@@ -63,7 +64,15 @@ classdef Control < handle
 %                     case 'random'
 %                         obj.assignment = Random(obj);
                     case 'serial'
-                        obj.assignment = Serial(obj);
+                        try
+%                             obj.assignment = Serial(obj,varargin{1},...
+%                                 varargin{2});
+                            obj.assignment = SerialPrototype(obj,...
+                                varargin{1},varargin{2});
+                        catch
+                            warning('Inappropriate arguments for serial assignment.')
+                            obj.assignment = All(obj);
+                        end
 %                     case 'gap'
 %                         obj.assignment = GAP(obj);
                     otherwise

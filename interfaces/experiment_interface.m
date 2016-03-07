@@ -42,7 +42,17 @@ function gui = experiment_interface(experiment)
     % object
         str = source.String;
         val = source.Value;
-        changeAssignment(experiment.control,str{val});
+        if strcmp(str{val},'serial')
+            batchSize = input('Enter batch size to send to the CV: ');
+            numClasses = input('Enter the number of unique classes in database: ');
+            policy = zeros(numClasses,1);
+            for i = 1:numClasses
+                policy(i) = input(['Enter probability of release to human for class ',i,':']);
+            end
+            changeAssignment(experiment.control,str{val},batchSize,policy);
+        else
+            changeAssignment(experiment.control,str{val});
+        end
     end
 
     function fusionMenu_callback(source,eventdata) 
