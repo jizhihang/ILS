@@ -98,7 +98,7 @@ classdef Experiment < handle
         function newData(obj,X,Y)
         % NEWDATA calls the ADDDATA function from the control object. X
         % must reference images from the existing image directory.
-            obj.control = addData(obj.control,X);
+            addData(obj.control,X);
             obj.labels = [obj.labels;Y(:)];
         end
         

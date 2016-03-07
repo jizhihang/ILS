@@ -12,6 +12,7 @@ classdef (Abstract) Assignment < handle
     properties
         control % Associated control object
         type % Assignment type (options): 'random', 'gap', 'all', 'serial'
+        assignmentMatrix % boolean array which tracks assignments to CV and human agents
         resultsListener % Listener for resultsReady event
         beginExperimentListener % Listener for beginExperiment
     end
@@ -22,6 +23,7 @@ classdef (Abstract) Assignment < handle
         % will declare 
             A.control = control;
             A.type = type;
+            A.assignmentMatrix = false(length(A.control.agents),length(A.control.data));
             A.resultsListener = cell(0);
             A.beginExperimentListener = addlistener(control,...
                 'beginExperiment',@A.handleAssignment);
@@ -34,15 +36,24 @@ classdef (Abstract) Assignment < handle
                     obj.control.agents{i},'resultsReady',@obj.handleResults);
             end
         end
-        function assignImages(obj,assignmentMatrix)
+        function assignImages(obj,agent)
         % ASSIGNIMAGES uses an assignmentmatrix (boolean numAgents x
         % numImages) to send image assignments to remote agents.
-            for i = 1:size(assignmentMatrix,1)
-                if any(assignmentMatrix(i,:))
-                    sendImages(obj.control.agents{i},...
-                        find(assignmentMatrix(i,:)));
+            if nargin == 2
+                sendImages(obj.control.agents{agent},...
+                    find(obj.assignmentMatrix(agent,:)));
+            else
+                for i = 1:size(obj.assignmentMatrix,1)
+                    if any(obj.assignmentMatrix(i,:))
+                        sendImages(obj.control.agents{i},...
+                            find(obj.assignmentMatrix(i,:)));
+                    end
                 end
             end
+        end
+        function updateAssignment(obj)
+        % UPDATEASSIGNMENT
+            A.assignmentMatrix = false(length(obj.control.agents),length(obj.control.data));
         end
     end
     

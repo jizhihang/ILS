@@ -44,10 +44,12 @@ function gui = experiment_interface(experiment)
         val = source.Value;
         if strcmp(str{val},'serial')
             batchSize = input('Enter batch size to send to the CV: ');
-            numClasses = input('Enter the number of unique classes in database: ');
+%             numClasses = input('Enter the number of unique classes in database: ');
+            numClasses = 2;
             policy = zeros(numClasses,1);
             for i = 1:numClasses
-                policy(i) = input(['Enter probability of release to human for class ',i,':']);
+                policy(i) = input(['Enter probability of release to human for class ',...
+                    num2str(i),':']);
             end
             changeAssignment(experiment.control,str{val},batchSize,policy);
         else

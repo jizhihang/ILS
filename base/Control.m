@@ -43,14 +43,14 @@ classdef Control < handle
             index = length(obj.agents)+1;
             obj.agents{index} = LocalAgent(type,localPort,remoteHost,...
                 remotePort,obj);
-            updateResults(obj);
+            updateControl(obj);
         end
         
         function addData(obj,newData)
         % ADDDATA will add data to control and update the size of the
         % results field.
             obj.data = [obj.data;newData(:)];
-            updateResults(obj);
+            updateControl(obj);
         end
         
         function changeAssignment(obj,assignmentType,varargin)
@@ -82,9 +82,11 @@ classdef Control < handle
             end
         end
         
-        function updateResults(obj)
-        % UPDATERESULTS will update the size of the results field according
-        % to the current size of agents and data. 
+        function updateControl(obj)
+        % UPDATE will update the size of the results field according
+        % to the current size of agents and data as well as the properties
+        % of assignment.
+            updateAssignment(obj.assignment);
             [n,m] = size(obj.results);
             if n < length(obj.data)
                 obj.results(:,(n+1):length(obj.data)) = 0;
@@ -125,11 +127,13 @@ classdef Control < handle
                     try
                         y = sml(obj.results);
                     catch
-                        warning('Something was wrong with SML. Using sum.');
-                        y = sum(obj.results,2);
+                        warning('Something was wrong with SML. Using mv.');
+                        y = mode(obj.results,2);
                     end
                 case 'sum'
                     y = sum(obj.results,1);
+                    y(y>=0) = 1;
+                    y(y<0) = -1;
                 case 'mv'
                     y = mode(obj.results,1);
                 otherwise

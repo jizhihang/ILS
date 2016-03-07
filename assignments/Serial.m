@@ -6,7 +6,6 @@ classdef Serial < Assignment
         humanIndex % index of human agent
         cvIndex % index of CV agent
         batchSize % size of assignment blocks to CV
-        assignmentMatrix % boolean array which tracks assignments to CV and human agents
         iterationListener % listener for iterationComplete event
         humanUpdateListener % listener for humanUpToDate event
         humanAssignment % current assignment iteration awaiting results
@@ -50,7 +49,6 @@ classdef Serial < Assignment
                 @A.handleAssignment);
             A.humanUpdateListener = addlistener(A,'humanUpToDate',...
                 @A.handleAssignment);
-            A.assignmentMatrix = false(2,length(A.control.data));
             A.humanAssignment = 0;
             A.humanAssignmentMax = 0;
             A.humanAssignmentTracker = zeros(length(A.control.data),1);
@@ -73,7 +71,7 @@ classdef Serial < Assignment
                 catch
                     obj.assignmentMatrix(obj.cvIndex,(prevIndex+1):end) = true;
                 end
-                assignImages(obj,obj.assignmentMatrix)
+                assignImages(obj,obj.cvIndex);
             elseif obj.humanAssignment == obj.humanAssignmentMax
                 notify(obj.control,'experimentComplete')
             else
@@ -102,8 +100,7 @@ classdef Serial < Assignment
                         = obj.humanAssignmentMax;
                     obj.assignmentMatrix(obj.humanIndex,:) = ...
                         obj.humanAssignmentTracker == obj.humanAssignmentMax;
-                    obj.assignmentMatrix(obj.cvIndex,:) = false;
-                    assignImages(obj,obj.assignmentMatrix);
+                    assignImages(obj,obj.humanIndex);
                 end
                 notify(obj,'iterationComplete');
             end
@@ -111,7 +108,7 @@ classdef Serial < Assignment
         function assignment = getHumanAssignment(obj,cvResults)
         % GETHUMANASSIGNMENT
             temp = false(size(cvResults));
-            temp(cvResults==0) = rand(size(temp(cvResults==0))) < obj.policy(1);
+            temp(cvResults==-1) = rand(size(temp(cvResults==-1))) < obj.policy(1);
             temp(cvResults==1) = rand(size(temp(cvResults==1))) < obj.policy(2);
             assignment = obj.assignmentMatrix(obj.cvIndex,:);
             assignment(assignment) = temp;

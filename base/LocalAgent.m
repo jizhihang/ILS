@@ -49,6 +49,7 @@ classdef LocalAgent < Agent
         % READRESULTS will retrieve classification results from the remote
         % agent.
             Y = fread(obj.socket);
+            Y(Y==0) = -1;
         end
         function terminate(obj)
         % TERMINATE sends a command to a remote agent to close and delete
