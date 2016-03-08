@@ -56,7 +56,7 @@ classdef GAP < Assignment
                 case 'iterationComplete'
                     getAssignment(obj);
                 case 'beginExperiment'
-                    obj.assignmentMatrix(:,1:min(25,length(obj.control.data))) = true;
+                    obj.assignmentMatrix(:,1:min(25,size(obj.assignmentMatrix,2))) = true;
             end
             assignImages(obj);
         end

@@ -61,8 +61,6 @@ classdef Control < handle
                 switch assignmentType
                     case 'all'
                         obj.assignment = All(obj);
-%                     case 'random'
-%                         obj.assignment = Random(obj);
                     case 'serial'
                         try
                             obj.assignment = Serial(obj,varargin{1},...
@@ -98,13 +96,7 @@ classdef Control < handle
         % to the current size of agents and data as well as the properties
         % of assignment.
             updateAssignment(obj.assignment);
-            [n,m] = size(obj.results);
-            if n < length(obj.data)
-                obj.results(:,(n+1):length(obj.data)) = 0;
-            end
-            if m < length(obj.agents)
-                obj.results((m+1):length(obj.agents),:) = 0;
-            end
+            obj.results = zeros(length(obj.agents),length(obj.data));
         end
         
         %------------------------------------------------------------------

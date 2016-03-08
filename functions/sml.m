@@ -21,25 +21,31 @@ function [label,score,pi] = sml(X)
     Xhat = X(indX,indY);
     Q = cov(Xhat');
     [V,~] = eig(Q);
-    Yhat = sign(V(:,1)'*X(indX,:));
+    pi = V(:,1);
+    score = pi'*X(indX,:);
+    label = sign(score);
+    if length(find(unique(label)~=0)) < 2
+        return
+    end
     
     % Expectation-Maximization
     e = 0.05;
     k = 0;
     flag = true;
+    Yhat = label;
     while flag
         psi = zeros(numAgents,1);
         for i = 1:numAgents
             psi(i) = numel(intersect(find(X(i,:)==1),find(Yhat==1)))/...
-                length(Yhat);
+                length(find(Yhat~=0));
         end
         eta = zeros(numAgents,1);
         for i = 1:numAgents
             eta(i) = numel(intersect(find(X(i,:)==-1),find(Yhat==-1)))/...
-                length(Yhat);
+                length(find(Yhat~=0));
         end
         alpha = (psi.*eta)./((1-psi).*(1-eta));
-        beta = (psi.*(1-psi))/(eta.*(1-eta));
+        beta = (psi.*(1-psi))./(eta.*(1-eta));
         score = log(alpha)'*X+sum(log(beta));
         label = sign(score);
         k = k+1;
