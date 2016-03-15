@@ -5,13 +5,13 @@ To run: <br />
 3. Initialize experiment environment by creating an environment: <br />
   "E = Experiment(data,labels);" <br />
 4. Initialize agents in each MATLAB terminal. <br />
-  For Human agents: "H = Human(imageDatabasePath,port);" <br />
-  For Computer-Vision agents: "CV = ComputerVision(imageDatabasePath,port);" <br />
+  For Human agents: "H = Human(port,imageDatabasePath);" <br />
+  For Computer-Vision agents: "CV = ComputerVision(port,imageDatabasePath);" <br />
 5. Make selections for assignment type and fusion type on GUI. <br />
 5. Begin experiment by selecting the start button on the GUI. <br />
 
 ## Dependencies
-This code has been written using Matlab 2014a and later and has not been tested using earlier versions. In order to use, you must have access to matlab's image processing toolbox, optimization toolbox, and instrument control toolbox. 
+This code has been written using Matlab 2014b and later and has not been tested using earlier versions. In order to use, you must have access to matlab's image processing toolbox, optimization toolbox, and instrument control toolbox. 
 
 This code additionally requires the MatConvNet and LibSVM software packages.
 
