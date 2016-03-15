@@ -11,7 +11,7 @@ To run: <br />
 5. Begin experiment by selecting the start button on the GUI. <br />
 
 ## Dependencies
-This code has been written using Matlab 2014b and later and has not been tested using earlier versions. In order to use, you must have access to matlab's image processing toolbox, optimization toolbox, and instrument control toolbox. 
+This code has been written using Matlab 2015a and later and has not been tested using earlier versions. In order to use, you must have access to matlab's image processing toolbox, optimization toolbox, and instrument control toolbox. 
 
 This code additionally requires the MatConvNet and LibSVM software packages.
 
