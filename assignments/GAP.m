@@ -28,7 +28,8 @@ classdef GAP < Assignment
             A.iterationListener = addlistener(A,'iterationComplete',...
                 @A.handleAssignment);
             A.agentIndex = false(length(control.agents),1);
-            A.value = zeros(size(A.assignmentMatrix));
+            A.iterationStatus = A.agentIndex;
+            A.value = ones(size(A.assignmentMatrix));
             A.cost = zeros(size(A.agentIndex));
             for i = 1:length(A.cost)
                 switch control.agents{i}.type
@@ -70,9 +71,12 @@ classdef GAP < Assignment
             obj.control.results(obj.agentIndex,obj.assignmentMatrix(obj.agentIndex,:))...
                 = readResults(src)';
             obj.iterationStatus(obj.agentIndex) = true;
-            fprintf('Results received from Agent %u.\n',find(obj.agentIndex));
+            fprintf('Results received from Agent %u.\n',...
+                find(obj.agentIndex));
             if all(obj.iterationStatus)
+                obj.iterationStatus(:) = false;
                 notify(obj,'iterationComplete');
+                return
             end
         end
         function getAssignment(obj)
@@ -83,25 +87,28 @@ classdef GAP < Assignment
             obj.imageCompletion(obj.imageConfidence>=obj.threshold) = true;
             if all(obj.imageCompletion)
                 notify(obj.control,'experimentComplete');
+                return
             end
             temp = 1 + repmat(obj.agentReliability,1,size(obj.value,2))...
                 - repmat(obj.imageConfidence,size(obj.value,1),1);
+            temp(temp<0) = 0;
             temp(obj.assignmentMatrix) = 0;
+            obj.assignmentMatrix(:) = false;
             temp(obj.value==0) = 0;
             obj.value = temp;
-            numImages = length(find(~obj.imageCompletion));
-            numAgents = length(obj.budget);
             [v,Aineq,bineq,Aeq,beq] = convertProblem(...
                 obj.value(:,~obj.imageCompletion),...
-                repmat(obj.cost,1,numImages),obj.budget);
-            intcon = 1:(numAgents*numImages);
-            lb = zeros(1,numAgents*numImages);
-            ub = ones(1,numAgents*numImages);
+                repmat(obj.cost,1,length(find(~obj.imageCompletion))),...
+                obj.budget);
+            intcon = 1:length(v);
+            lb = zeros(length(v),1);
+            ub = ones(length(v),1);
             options = optimoptions('intlinprog','Display','none',...
                 'CutGeneration','basic');
             tempAssign = intlinprog(-v,intcon,Aineq,bineq,Aeq,beq,...
                 lb,ub,options);
-            obj.assignmentMatrix(:,~obj.imageCompletion) = reshape(tempAssign,numAgents,numImages);
+            obj.assignmentMatrix(:,~obj.imageCompletion) = ...
+                reshape(tempAssign,length(obj.budget),[])==1;
         end
     end
     

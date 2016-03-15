@@ -24,6 +24,7 @@ function [label,score,pi] = sml(X)
     pi = V(:,1);
     score = pi'*X(indX,:);
     label = sign(score);
+    pi = abs(pi);
     if length(find(unique(label)~=0)) < 2
         return
     end
@@ -46,16 +47,23 @@ function [label,score,pi] = sml(X)
         end
         alpha = (psi.*eta)./((1-psi).*(1-eta));
         beta = (psi.*(1-psi))./(eta.*(1-eta));
-        score = log(alpha)'*X+sum(log(beta));
-        label = sign(score);
+        tempScore = log(alpha)'*X+sum(log(beta));
+        tempLabel = sign(score);
         k = k+1;
-        if norm(label-Yhat,1) < 2*e*numSamples || k > 50
+        if ~all(isfinite(tempScore))
             flag = false;
+        elseif norm(label-Yhat,1) < 2*e*numSamples || k > 50
+            flag = false;
+            pi = abs((psi+eta)/2);
+            score = tempScore;
+            label = tempLabel;
         else
             Yhat = label;
+            pi = abs((psi+eta)/2);
+            score = tempScore;
+            label = tempLabel;
         end
     end
-    pi = (psi+eta)/2;
 
 end
 
