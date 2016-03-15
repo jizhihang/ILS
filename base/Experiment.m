@@ -41,20 +41,27 @@ classdef Experiment < handle
             else
                 E.labels = [];
             end
-            scanForAgents(E);
         end
         
         %------------------------------------------------------------------
         % System-level:
         
-%         function startExperiment(obj)
-%         % STARTEXPERIMENT will begin the experiment, essentially telling
-%         % the control that all agents and data are available. This will be
-%         % initiated by a button on the experimenter interface.
-%             fclose(obj.socket);
-%             delete(obj.socket);
-%             start(obj.control);
-%         end
+        function scanForAgents(obj)
+        % SCANFORAGENTS scans direct interface communication from any IP
+        % address and port. It will open the socket and await messages from
+        % remote agents wanting to join the network. It will execute
+        % ADDAGENT when an agent requests to join the network.
+            fopen(obj.socket);
+            obj.socket.DatagramReceivedFcn = @obj.newAgent;
+            obj.socket.readasyncmode = 'continuous';
+        end
+        
+        function stopScanForAgents(obj)
+        % STOPSCANFORAGENTS closes the direct communication socket to
+        % experiment.
+            fclose(obj.socket);
+            delete(obj.socket);
+        end
         
         function endExperiment(obj,src,event)
         % ENDEXPERIMENT will end the experiment, shutting down all direct
@@ -72,16 +79,6 @@ classdef Experiment < handle
         
         %------------------------------------------------------------------
         % Dependencies:
-        
-        function scanForAgents(obj)
-        % SCANFORAGENTS scans direct interface communication from any IP
-        % address and port. It will open the socket and await messages from
-        % remote agents wanting to join the network. It will execute
-        % ADDAGENT when an agent requests to join the network.
-            fopen(obj.socket);
-            obj.socket.DatagramReceivedFcn = @obj.newAgent;
-            obj.socket.readasyncmode = 'continuous';
-        end
         
         function newAgent(obj,src,event)
         % NEWAGENT receives the direct interface information from the

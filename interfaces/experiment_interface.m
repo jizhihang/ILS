@@ -1,7 +1,7 @@
 function gui = experiment_interface(experiment)
 % EXPERIMENT_INTERFACE
 
-    gui = figure('Visible','off','Position',[300,300,300,450]);
+    gui = figure('Visible','off','Position',[300,300,500,450]);
 
     assignmentText = uicontrol('Style','text','String','Assignment',...
         'Position',[100,325,100,50]);
@@ -13,6 +13,14 @@ function gui = experiment_interface(experiment)
     fusionMenu = uicontrol('Style','popupmenu','String',...
         {'','sum','mv','sml'},'Position',[100,200,100,50],'Callback',...
         @fusionMenu_callback);
+    scanText = uicontrol('Style','text','String','Scanning for Agents',...
+        'Position',[300,300,100,50]);
+    scanButton = uicontrol('Style','pushbutton','String',...
+        'Start Scan','Position',[300,250,100,50],'Callback',...
+        @scanButton_callback);
+    stopScanButton = uicontrol('Style','pushbutton','String',...
+        'Stop Scan','Position',[300,150,100,50],'Callback',...
+        @stopScanButton_callback);
 	startButton = uicontrol('Style','pushbutton','String','Start',...
         'Position',[100,100,100,50],'Callback',@startButton_callback);
     align([assignmentText,assignmentMenu,fusionText,fusionMenu,...
@@ -22,6 +30,9 @@ function gui = experiment_interface(experiment)
     assignmentMenu.Units = 'normalized';
     fusionText.Units = 'normalized';
     fusionMenu.Units = 'normalized';
+    scanText.Units = 'normalized';
+    scanButton.Units = 'normalized';
+    stopScanButton.Units = 'normalized';
     startButton.Units = 'normalized';
     
     gui.Name = 'Experiment';
@@ -30,10 +41,18 @@ function gui = experiment_interface(experiment)
     
     function startButton_callback(source,eventdata) 
     % STARTBUTTON_CALLBACK starts the experiment
-        fclose(experiment.socket);
-        delete(experiment.socket);
         addResultsListener(experiment.control.assignment);
         notify(experiment.control,'beginExperiment');
+    end
+
+    function scanButton_callback(source,eventdata) 
+    % SCANBUTTON_CALLBACK begins scanning for agents
+        scanForAgents(experiment);
+    end
+
+    function stopScanButton_callback(source,eventdata)
+    % STOPSCANBUTTON_CALLBACK ends scanning for agents
+        stopScanForAgents(experiment);
     end
 
     function assignmentMenu_callback(source,eventdata) 
