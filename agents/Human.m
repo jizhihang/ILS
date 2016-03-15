@@ -3,9 +3,13 @@ classdef Human < RemoteAgent
 % which the user provides binary classification of images.
     
     properties
-        hGui % structure for holding the gui handles
-        hFigure % handle to gui figure
-        pred_labels
+        gui
+        response
+        iterationListener
+    end
+    
+    events
+        iterationComplete
     end
     
     methods
@@ -17,15 +21,15 @@ classdef Human < RemoteAgent
                 error('Too few parameters for class construction.');
             end
             A@RemoteAgent('human',remotePort,imageDirectory);
-            
-            % create Labeling interface for human agent
-            [A.hFigure, A.hGui] = human_interface;
+            A.gui = cell(0);
+            A.response = [];
+            A.iterationListener = cell(0);
         end
         
         %------------------------------------------------------------------
         % Dependencies:
         
-        function Y = classifyImages(obj,src,event)
+        function classifyImages(obj,src,event)
         % CLASSIFYIMAGES is a callback function which is initiated by the
         % receipt of an image assignment from a local agent. It will
         % classify images or terminate the agent upon receipt of the
@@ -34,22 +38,22 @@ classdef Human < RemoteAgent
             if strcmp(char(X)','complete')
                 terminate(obj);
             else
-                Y = zeros(length(X),1);
                 images = getImages(obj,X); % gets images from directory
-                
                 % classify images
-                human_interface('displayImages',obj.hGui,1,images,obj);  % show image to user
+                obj.gui = human_interface(obj,images);
+                obj.iterationListener = addlistener(obj,...
+                    'iterationComplete',@obj.sendResponse);
             end
         end
         
-        
-        function sendImageLabels(obj,labels)
-        % SENTIMAGELABELS is a function called from the human interface gui
+        function sendResponse(obj,src,event)
+        % SENDRESPONSE is a function called from the human interface gui
         % that will send the classified image labels back to the control
         % server as soon as the human agent has finished.
-            fwrite(obj.socket,labels(:));
+            close(obj.gui);
+            fwrite(obj.socket,obj.response(:));
             fprintf('Human completed classification of %u images.\n',...
-                length(labels))
+                length(obj.response))
         end
         %------------------------------------------------------------------
         

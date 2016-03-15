@@ -30,7 +30,7 @@ classdef Control < handle
         % CONTROL is the class constructor. It will set the preliminary
         % assignment and fusion methods.
             C.fusion = 'sum';
-            C.assignment = All(C);
+            C.assignment = cell(0);
             C.data = [];
             C.agents = cell(0);
             C.results = [];
@@ -55,39 +55,39 @@ classdef Control < handle
         
         function changeAssignment(obj,assignmentType,varargin)
         % CHANGEASSIGNMENT updates the assignment object property
-            if ~strcmp(obj.assignment.type,assignmentType)
+            if ~isempty(obj.assignment)
                 delete(obj.assignment.beginExperimentListener);
                 delete(obj.assignment);
-                switch assignmentType
-                    case 'all'
+            end
+            switch assignmentType
+                case 'all'
+                    obj.assignment = All(obj);
+                case 'serial'
+                    try
+                        obj.assignment = Serial(obj,varargin{1},...
+                            varargin{2});
+                    catch
+                        warning('Inappropriate arguments for serial assignment.')
                         obj.assignment = All(obj);
-                    case 'serial'
-                        try
-                            obj.assignment = Serial(obj,varargin{1},...
-                                varargin{2});
-                        catch
-                            warning('Inappropriate arguments for serial assignment.')
-                            obj.assignment = All(obj);
-                        end
-                    case 'serialPrototype'
-                        try
-                            obj.assignment = SerialPrototype(obj,...
-                                varargin{1},varargin{2});
-                        catch
-                            warning('Inappropriate arguments for serial assignment.')
-                            obj.assignment = All(obj);
-                        end
-                    case 'gap'
-                        try
-                            obj.assignment = GAP(obj,varargin{1},varargin{2});
-                        catch
-                            warning('Inappropriate arguments for gap assignment.')
-                            obj.assignment = All(obj);
-                        end
-                    otherwise
-                        warning('Not a valid assignment type. Using all.');
+                    end
+                case 'serialPrototype'
+                    try
+                        obj.assignment = SerialPrototype(obj,...
+                            varargin{1},varargin{2});
+                    catch
+                        warning('Inappropriate arguments for serial assignment.')
                         obj.assignment = All(obj);
-                end
+                    end
+                case 'gap'
+                    try
+                        obj.assignment = GAP(obj,varargin{1},varargin{2});
+                    catch
+                        warning('Inappropriate arguments for gap assignment.')
+                        obj.assignment = All(obj);
+                    end
+                otherwise
+                    warning('Not a valid assignment type. Using all.');
+                    obj.assignment = All(obj);
             end
         end
         
@@ -95,7 +95,9 @@ classdef Control < handle
         % UPDATE will update the size of the results field according
         % to the current size of agents and data as well as the properties
         % of assignment.
-            updateAssignment(obj.assignment);
+            if ~isempty(obj.assignment)
+                updateAssignment(obj.assignment);
+            end
             obj.results = zeros(length(obj.agents),length(obj.data));
         end
         

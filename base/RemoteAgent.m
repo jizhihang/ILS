@@ -26,7 +26,7 @@ classdef (Abstract) RemoteAgent < Agent
             if nargin >= 2
                 % **This has to be hard-coded for the time being**
                 localHost = 'localHost';
-                localPort = 2006;
+                localPort = 9998;
                 if nargin == 3
                     addpath(imageDirectory);
                     A.imdir = dir(imageDirectory);

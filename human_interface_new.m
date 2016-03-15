@@ -14,7 +14,7 @@ function gui = human_interface_new(human,images)
     
     n = length(images);
     k = 1;
-    imshow(images(k).name);
+    imshow(images{k});
     
     gui.Name = 'Human';
     movegui(gui,'center')
@@ -22,10 +22,23 @@ function gui = human_interface_new(human,images)
     
     function targetButton_callback(source,eventdata) 
     % TARGETBUTTON_CALLBACK classifies the image as a target
-        if k < n
+        if k <= n
             human.response(k) = 1;
+            if k < n
+                k = k + 1;
+                imshow(images{k});
+                return;
+            end
+            notify(human,'iterationComplete');
+        end
+    end
+
+    function nonTargetButton_callback(source,eventdata) 
+    % NONTARGETBUTTON_CALLBACK classifies the image as a target
+        if k <= n
+            human.response(k) = 0;
             k = k + 1;
-            imshow(images(k).name);
+            imshow(images{k});
         else
             notify(human,'iterationComplete');
         end

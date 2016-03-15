@@ -41,19 +41,19 @@ classdef Human_new < RemoteAgent
                 images = getImages(obj,X); % gets images from directory
                 % classify images
                 obj.gui = human_interface_new(obj,images);
-                obj.iterationListener = addlistener(obj.gui,...
+                obj.iterationListener = addlistener(obj,...
                     'iterationComplete',@obj.sendResponse);
             end
         end
         
-        function sendResponse(obj,labels)
+        function sendResponse(obj,src,event)
         % SENDRESPONSE is a function called from the human interface gui
         % that will send the classified image labels back to the control
         % server as soon as the human agent has finished.
             close(obj.gui);
-            fwrite(obj.socket,labels(:));
+            fwrite(obj.socket,obj.response(:));
             fprintf('Human completed classification of %u images.\n',...
-                length(labels))
+                length(obj.response))
         end
         %------------------------------------------------------------------
         
