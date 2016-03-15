@@ -56,8 +56,17 @@ classdef GAP < Assignment
             switch event.EventName
                 case 'iterationComplete'
                     getAssignment(obj);
+                    if all(~obj.assignmentMatrix(:))
+                        notify(obj.control,'experimentComplete');
+                        return
+                    end
                 case 'beginExperiment'
                     obj.assignmentMatrix(:,1:min(25,size(obj.assignmentMatrix,2))) = true;
+            end
+            for i = 1:length(obj.agentIndex)
+                if ~any(obj.assignmentMatrix(i,:))
+                    obj.iterationStatus(i) = true;
+                end
             end
             assignImages(obj);
         end
@@ -86,7 +95,7 @@ classdef GAP < Assignment
             obj.imageConfidence = abs(score);
             obj.imageCompletion(obj.imageConfidence>=obj.threshold) = true;
             if all(obj.imageCompletion)
-                notify(obj.control,'experimentComplete');
+                obj.assignmentMatrix(:) = false;
                 return
             end
             temp = 1 + repmat(obj.agentReliability,1,size(obj.value,2))...
@@ -107,8 +116,12 @@ classdef GAP < Assignment
                 'CutGeneration','basic');
             tempAssign = intlinprog(-v,intcon,Aineq,bineq,Aeq,beq,...
                 lb,ub,options);
-            obj.assignmentMatrix(:,~obj.imageCompletion) = ...
-                reshape(tempAssign,length(obj.budget),[])==1;
+            try
+                obj.assignmentMatrix(:,~obj.imageCompletion) = ...
+                    reshape(tempAssign,length(obj.budget),[])==1;
+            catch
+                warning('Problem has no feasible solutions.');
+            end
         end
     end
     

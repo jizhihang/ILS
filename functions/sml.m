@@ -47,8 +47,9 @@ function [label,score,pi] = sml(X)
         end
         alpha = (psi.*eta)./((1-psi).*(1-eta));
         beta = (psi.*(1-psi))./(eta.*(1-eta));
-        tempScore = log(alpha)'*X+sum(log(beta));
-        tempLabel = sign(score);
+        tempScore = log(alpha)'*X;
+        tempScore(indY) = tempScore(indY) + sum(log(beta));
+        tempLabel = sign(tempScore);
         k = k+1;
         if ~all(isfinite(tempScore))
             flag = false;

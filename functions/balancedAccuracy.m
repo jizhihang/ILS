@@ -8,6 +8,7 @@ function pi = balancedAccuracy(predLabels,trueLabels)
         y = find(trueLabels==Y(i));
         pi = pi + length(intersect(y,find(predLabels==Y(i))))/length(y);
     end
+    pi = pi/length(Y);
 
 end
 
