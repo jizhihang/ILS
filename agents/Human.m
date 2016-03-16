@@ -50,7 +50,7 @@ classdef Human < RemoteAgent
         % SENDRESPONSE is a function called from the human interface gui
         % that will send the classified image labels back to the control
         % server as soon as the human agent has finished.
-            close(obj.gui);
+%             close(obj.gui);
             fwrite(obj.socket,obj.response(:));
             fprintf('Human completed classification of %u images.\n',...
                 length(obj.response))
