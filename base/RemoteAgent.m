@@ -117,7 +117,11 @@ classdef (Abstract) RemoteAgent < Agent
             end
             image = cell(length(index),1);
             for i = 1:length(index)
-                image{i} = imread(obj.imdir(index(i)).name);
+                image{i} = imread([int2str(i) '.jpg']);
+%                 image{i} = imread(obj.imdir(index(i)).name); % <- this way does 
+                    % not work as intended because the dir command sorts
+                    % images alphabetically, and thus they no-longer match
+                    % up with class labels
             end
         end
         
