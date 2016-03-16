@@ -3,19 +3,36 @@ classdef ComputerVision < RemoteAgent
 % computer vision algorithm to classify images.
     
     properties
-        model
+        SVMmodel
+        DNNnet
+        SVMscale
     end
     
     methods
         % -----------------------------------------------------------------
         % Class constructor:
         
-        function A = ComputerVision(remotePort,imageDirectory,cvModel)
+        function A = ComputerVision(remotePort,imageDirectory)
             if nargin < 1
                 error('Too few parameters for class construction.');
             end
             A@RemoteAgent('cv',remotePort,imageDirectory);
-            A.model = cvModel;
+            
+            % Load and set up DNN Feature Extractor
+%             [A.DNNnet, A.SVMmodel] = Initialize();
+            net=load('imagenet-vgg-verydeep-16.mat');
+            dnn = net;
+            for i=1:length(net.layers)
+                try
+                    dnn.layers{i}.weights{1}=gpuArray(net.layers{i}.weights{1});
+                    dnn.layers{i}.weights{2}=gpuArray(net.layers{i}.weights{2});
+                catch
+                end
+            end
+            A.DNNnet = dnn;
+            tmp = load('SVMmodel');
+            A.SVMmodel = tmp.svmModel;
+            A.SVMscale = load('SVMscale');
         end
         
         %------------------------------------------------------------------
@@ -31,61 +48,79 @@ classdef ComputerVision < RemoteAgent
                 terminate(obj);
             else
                 Y = zeros(length(X),1);
-                images = getImages(X); % gets images from directory
+                images = getImages(obj,X); % gets images from directory
                 % classify images
                 % extract deep features
-                features = ExtractFeatures(images);
+                features = ExtractFeatures(obj,images,obj.DNNnet);
                 % classify images
-                Y = ClassifyFeatures(features);
+                Y = ClassifyFeatures(obj,features,obj.SVMmodel,obj.SVMscale);
                 fwrite(obj.socket,Y(:));
                 fprintf('Computer vision completed classification of %u images.\n',...
                     length(X))
             end
         end
         
-        function features = ExtractFeatures(Images,layer)
+        function features = ExtractFeatures(obj,Images,net,layer)
         % EXTRACTFEATURES is CV module that runs images through a
         % pre-trained deep convolutional neural network (DCNN), and
         % extracts the features from a specified layer (default layer is
         % the top layer). 
         % Input: cell array of images
         % Output: 2d matrix of features (images x features)
-        if(nargin==1)
-            layer = 20;
+        if(nargin<4)
+            layer = 37;
         end
-        net = load('imagenet-caffe-alex');                          % load DNN
-        
+
         for i=1:length(Images)
-            Image{i} = single(Image{i});                                      % convert to single
-            Image{i} = imresize(Image{i}, net.normalization.imageSize(1:2));  % re-size
-            Image{i} = Image{i} - net.normalization.averageImage;             % subtract mean
-            res{i} = vl_simplenn(net, Image{i});                              % extract features
-            tmp = squeeze(res(layer).x);
+            Im = single(Images{i});                                      % convert to single
+            Im = imresize(Im, net.normalization.imageSize(1:2));        % re-size
+            Im = Im - net.normalization.averageImage;                   % subtract mean
+            imGpu = gpuArray(Im);
+            res = vl_simplenn(net, imGpu);                                 % extract features
+            tmp = double(gather(squeeze(res(layer).x)));
             features(i,:) = tmp(:);
         end
         end
         
-        function [pred_label, score, accuracy] = ClassifyFeatures(Features, Model, options, Labels)
+        function [pred_label, score, accuracy] = ClassifyFeatures(obj,Features, Model,scale, options, Labels)
         % CLASSIFYFEATURES is CV module that uses a shalow learner (SVM) to
         % classify extracted image features. An already trained SVM model
         % must be provided for classifcation. 
         % Input: Matrix of Image features, SVM model, SVM options
         % (optional), Labels (optional)
         % Output: Predictions, score, accuracy (if labels were provided)
-            if(nargin<2)
-                Model = load('SVMmodel');
-            end
-            if(nargin<3)
+            if(nargin<5)
                 options = '-q';
             end
-            if(nargin<4)
-                Labels = ones(size(Features,1));
+            if(nargin<6)
+                Labels = ones(1,size(Features,1));
             end
             % predict image labels
-            [pred_label, accuracy, score] = svmpredict(Labels,Features,Model,options); 
+            Features(Features<0)=0;
+            Features = (Features - scale.scale_min) / (scale.scale_max - scale.scale_min);
+            [pred_label, accuracy, score] = svmpredict(Labels',Features,Model,options); 
         end
         %------------------------------------------------------------------
         
+    end
+    
+    methods (Static)
+        function [dnn, model] = Initialize() 
+        % INITIALIZE loads the DNN into GPU memory to be usable for 
+        % fast feature extraction of images, and loads a pre-trained SVM
+        % model. In future versions, we will have a feature to train/re-train
+        % an SVM model on the fly. 
+            net=load('imagenet-vgg-verydeep-16.mat');
+            dnn = net;
+            for i=1:length(net.layers)
+                try
+                    dnn.layers{i}.weights{1}=gpuArray(net.layers{i}.weights{1});
+                    dnn.layers{i}.weights{2}=gpuArray(net.layers{i}.weights{2});
+                catch
+                end
+            end
+            model = load('SVMmodel');
+        end
     end
     
 end
