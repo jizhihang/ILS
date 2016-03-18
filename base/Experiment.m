@@ -24,6 +24,7 @@ classdef Experiment < handle
         % EXPERIMENT is the class constructor which will set the data and
         % label properties (not necessary), instantiate a control object,
         % open a GUI, and scan for agents.
+            delete(instrfindall); % delete any existing udp objects
             E.localPort = 9998; % **Hard-coded**
             E.control = Control;
             E.socket = udp('0.0.0.0','LocalHost','localHost',...
