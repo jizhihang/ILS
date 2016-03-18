@@ -20,6 +20,7 @@ classdef (Abstract) RemoteAgent < Agent
         % to the machine which is hosting the experiment. Upon establishing
         % a connection with the experiment, it will wait for a message from
         % a local agent.
+            delete(instrfindall); % delete existing udp objects
             A@Agent(type);
             A.status = false;
             A.port = remotePort;
