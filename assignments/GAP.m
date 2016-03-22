@@ -39,6 +39,12 @@ classdef GAP < Assignment
                         A.cost(i) = 1;
                     case 'prototype'
                         A.cost(i) = rand;
+                    case 'prototype_cv'
+                        A.cost(i) = 1e-2;
+                    case 'prototype_bci'
+                        A.cost(i) = 1e-1;
+                    case 'prototype_human'
+                        A.cost(i) = 1;
                     otherwise
                         A.cost(i) = inf;
                 end

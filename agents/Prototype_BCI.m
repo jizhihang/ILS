@@ -1,6 +1,7 @@
-classdef Prototype < RemoteAgent
-% PROTOTYPE is a child of the LocalAgent superclass to be used for system
-% testing and development. It generates an image classification randomly.
+classdef Prototype_BCI < RemoteAgent
+% PROTOTYPE_BCI is a child of the LocalAgent superclass to be used for
+% system testing and development. It generates an image classification
+% randomly according to a specified accuracy and delay of 1e-1.
     
     properties
         accuracy % Accuracy of prototype agent
@@ -11,17 +12,16 @@ classdef Prototype < RemoteAgent
         % -----------------------------------------------------------------
         % Class constructor:
         
-        function A = Prototype(remotePort,agentAccuracy,agentDelay)
+        function A = Prototype_BCI(remotePort,agentAccuracy)
             if nargin < 1
                 error('Too few parameters for class construction.');
             end
-            A@RemoteAgent('prototype',remotePort);
-            if nargin == 3
+            A@RemoteAgent('prototype_bci',remotePort);
+            A.delay = 1e-1;
+            if nargin == 2
                 A.accuracy = agentAccuracy;
-                A.delay = agentDelay;
             else
                 A.accuracy = rand;
-                A.delay = 0;
             end
         end
         
@@ -41,7 +41,7 @@ classdef Prototype < RemoteAgent
                 Y(rand(length(X),1)<obj.accuracy) = 1;
                 pause(obj.delay);
                 fwrite(obj.socket,Y(:));
-                fprintf('Prototype completed classification of %u images.\n',...
+                fprintf('Prototype_BCI completed classification of %u images.\n',...
                     length(X))
             end
         end
