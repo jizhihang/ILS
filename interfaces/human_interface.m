@@ -54,7 +54,7 @@ function nonTargetButton_callback(~,~)
 % NONTARGETBUTTON_CALLBACK classifies the image as a target
 global gImages k n gHuman
 if k <= n
-    gHuman.response(k) = 1;
+    gHuman.response(k) = -1;
     if k < n
         k = k + 1;
         imshow(gImages{k});
