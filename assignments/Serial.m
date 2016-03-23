@@ -12,15 +12,16 @@ classdef Serial < Assignment
         cvIndex % index of CV agent
         batchSize % size of assignment blocks to CV
         iterationListener % listener for iterationComplete event
-        humanUpdateListener % listener for humanUpToDate event
         humanAssignment % current assignment iteration awaiting results
         humanAssignmentMax % most recent assignment iteration for human
         humanAssignmentTracker % array of all images assigned to human
+        finalIteration % boolean which identifies the human beginning the final batch
+        finalCVIteration % boolean which identifies the CV beginning the final batch
     end
     
     events
         iterationComplete % event which signifies the completion of a batch of CV assignments
-        humanUpToDate % event which signifies that the human is current with the CV iterations
+%         humanUpToDate % event which signifies that the human is current with the CV iterations
     end
     
     methods
@@ -50,11 +51,11 @@ classdef Serial < Assignment
             end
             A.iterationListener = addlistener(A,'iterationComplete',...
                 @A.handleAssignment);
-            A.humanUpdateListener = addlistener(A,'humanUpToDate',...
-                @A.handleAssignment);
             A.humanAssignment = 0;
             A.humanAssignmentMax = 0;
             A.humanAssignmentTracker = zeros(length(A.control.data),1);
+            A.finalIteration = false;
+            A.finalCVIteration = false;
         end
         
         %------------------------------------------------------------------
@@ -68,28 +69,31 @@ classdef Serial < Assignment
         % CV assignment, it assigns the next batch of images to the CV. On
         % subsequent calls from humanUpToDate, it completes the experiment
         % if all images have been assigned to the CV.
-            if strcmp(event.EventName,'beginExperiment')
-                prevIndex = 0;
-            else
-                prevIndex = find(obj.assignmentMatrix(obj.cvIndex,:),1,'last');
+            switch event.EventName
+                case 'beginExperiment'
+                    if obj.batchSize < size(obj.assignmentMatrix,2)
+                        obj.assignmentMatrix(obj.cvIndex,...
+                            1:obj.batchSize) = true;
+                    else
+                        obj.assignmentMatrix(obj.cvIndex,1:end) = true;
+                        obj.finalCVIteration = true;
+                    end
+                case 'iterationComplete'
+                    prevIndex = find(obj.assignmentMatrix(obj.cvIndex,:),1,'last');
+                    obj.assignmentMatrix(obj.cvIndex,:) = false;
+                    if (prevIndex+obj.batchSize) < size(obj.assignmentMatrix,2)
+                        obj.assignmentMatrix(obj.cvIndex,...
+                            (prevIndex+1):(prevIndex+obj.batchSize)) = true;
+                    else
+                        obj.assignmentMatrix(obj.cvIndex,...
+                            (prevIndex+1):end) = true;
+                        obj.finalCVIteration = true;
+                    end
+                otherwise
+                    warning('Control flow should not be here.');
+                    return
             end
-            if size(obj.assignmentMatrix,2) > prevIndex
-                if strcmp(event.EventName,'humanUpToDate')
-                    return % CV has not yet seen all images
-                end
-                obj.assignmentMatrix(obj.cvIndex,:) = false;
-                try 
-                    obj.assignmentMatrix(obj.cvIndex,...
-                        (prevIndex+1):(prevIndex+obj.batchSize)) = true;
-                catch
-                    obj.assignmentMatrix(obj.cvIndex,(prevIndex+1):end) = true;
-                end
-                assignImages(obj,obj.cvIndex);
-            elseif obj.humanAssignment == obj.humanAssignmentMax
-                notify(obj.control,'experimentComplete')
-            else
-                return % Wait for human to be up to date
-            end
+            assignImages(obj,obj.cvIndex);
         end
         function handleResults(obj,src,event)
         % HANDLERESULTS handles two events: classification results from the
@@ -103,7 +107,9 @@ classdef Serial < Assignment
                     obj.humanAssignmentTracker==obj.humanAssignment)...
                     = readResults(src)';
                 if obj.humanAssignment == obj.humanAssignmentMax
-                    notify(obj,'humanUpToDate');
+                    if obj.finalIteration
+                        notify(obj.control,'experimentComplete');
+                    end
                 end
             else
                 results = readResults(src)';
@@ -114,9 +120,15 @@ classdef Serial < Assignment
                     obj.humanAssignmentMax = obj.humanAssignmentMax + 1;
                     obj.humanAssignmentTracker(newAssignment)...
                         = obj.humanAssignmentMax;
+                    obj.assignmentMatrix(obj.humanIndex,:) = false;
                     obj.assignmentMatrix(obj.humanIndex,:) = ...
                         obj.humanAssignmentTracker == obj.humanAssignmentMax;
                     assignImages(obj,obj.humanIndex);
+                    if obj.finalCVIteration
+                        obj.finalIteration = true;
+                    end
+                elseif obj.finalCVIteration
+                    notify(obj.control,'experimentComplete');
                 end
                 notify(obj,'iterationComplete');
             end
@@ -124,7 +136,6 @@ classdef Serial < Assignment
         function terminate(obj)
         % TERMINATE will delete all listeners in the assignment
             delete(obj.iterationListener);
-            delete(obj.humanUpdateListener);
             terminate@Assignment(obj);
         end
         

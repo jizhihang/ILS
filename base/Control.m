@@ -122,7 +122,9 @@ classdef Control < handle
                         y = mode(obj.results,2);
                     end
                 case 'sum'
-                    y = sum(obj.results,1);
+                    temp = obj.results;
+                    temp(obj.results==0) = NaN;
+                    y = nansum(temp,1);
                     y(y>=0) = 1;
                     y(y<0) = -1;
                 case 'mv'
@@ -130,8 +132,9 @@ classdef Control < handle
                     % image. We must change the 0 to NaN otherwise it will
                     % mess up the mv fusion since mode will always return
                     % the smallest value
-                    obj.results(obj.results==0)=NaN;
-                    y = mode(obj.results,1);
+                    temp = obj.results;
+                    temp(obj.results==0) = NaN;
+                    y = mode(temp,1);
                 otherwise
                     warning('A valid fusion method is not set.');
                     return
