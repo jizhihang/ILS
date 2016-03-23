@@ -101,7 +101,9 @@ classdef Control < handle
             for i = agentIndex
                 terminate(obj.agents{i});
             end
-            terminate(obj.assignment);
+            if ~isempty(obj.assignment)
+                terminate(obj.assignment);
+            end
         end
         
         %------------------------------------------------------------------
@@ -111,11 +113,6 @@ classdef Control < handle
         % GET.LABELS is the access command for labels. It will call the
         % given fusion function to determine the pseudo-labels in
         % real-time. Options: 'SML', 'sum', 'MV'.
-        
-        % labels are -1 or 1, a zero represents a non-labeled image. We
-        % must change the 0 to NaN otherwise it will mess up the mv fusion
-        % since mode will always return the smallest value
-        obj.results(2,obj.results(2,:)==0)=NaN;
             switch obj.fusion
                 case 'sml'
                     try
@@ -129,6 +126,11 @@ classdef Control < handle
                     y(y>=0) = 1;
                     y(y<0) = -1;
                 case 'mv'
+                    % labels are -1 or 1, a zero represents a non-labeled
+                    % image. We must change the 0 to NaN otherwise it will
+                    % mess up the mv fusion since mode will always return
+                    % the smallest value
+                    obj.results(obj.results==0)=NaN;
                     y = mode(obj.results,1);
                 otherwise
                     error('Not a valid fusion method.');

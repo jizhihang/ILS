@@ -28,7 +28,7 @@ classdef Experiment < handle
                 error('Not enough arguments to start an experiment');
             end
             delete(instrfindall); % delete any existing udp objects
-            E.localPort = 9999; % **Hard-coded**
+            E.localPort = 9000; % **Hard-coded**
             E.control = Control;
             E.socket = udp('0.0.0.0','LocalHost','localHost',...
                 'LocalPort',E.localPort);
@@ -64,7 +64,6 @@ classdef Experiment < handle
         % STOPSCANFORAGENTS closes the direct communication socket to
         % experiment.
             fclose(obj.socket);
-            delete(obj.socket);
         end
         
         function endExperiment(obj,src,event)
@@ -73,7 +72,16 @@ classdef Experiment < handle
         % experimenter interface.
             terminate(obj.control);
             delete(obj.listener);
-            close(obj.gui);
+            try
+                delete(obj.socket);
+            catch
+                warning('UDP already closed.');
+            end
+            try
+                close(obj.gui);
+            catch
+                warning('GUI already closed.');
+            end
             fprintf('Experiment complete.\n')
             if ~isempty(obj.labels)
                 fprintf('Balanced accuracy: %.3f\n',...
