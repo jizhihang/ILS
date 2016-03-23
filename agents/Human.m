@@ -23,7 +23,7 @@ classdef Human < RemoteAgent
                 error('Too few parameters for class construction.');
             end
             A@RemoteAgent('human',remotePort,imageDirectory);
-            A.gui = cell(0);
+            A.gui = [];
             A.response = [];
             A.iterationListener = cell(0);
         end
@@ -39,11 +39,16 @@ classdef Human < RemoteAgent
             X = fread(obj.socket);
             if strcmp(char(X)','complete')
                 terminate(obj);
+                close(obj.gui);
             else
                 images = getImages(obj,X); % gets images from directory
-                obj.gui = human_interface(obj,images);
-                obj.iterationListener = addlistener(obj,...
-                    'iterationComplete',@obj.sendResponse);
+                if isempty(obj.gui)
+                    obj.gui = human_interface(obj,images,true);
+                    obj.iterationListener = addlistener(obj,...
+                        'iterationComplete',@obj.sendResponse);
+                else
+                    obj.gui = human_interface(obj,images,false);
+                end
             end
         end
         

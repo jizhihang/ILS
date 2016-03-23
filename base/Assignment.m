@@ -62,7 +62,7 @@ classdef (Abstract) Assignment < handle
         % TERMINATE will delete all listeners in the assignment
             delete(obj.beginExperimentListener);
             for i = 1:length(obj.control.agents)
-                delete(obj.assignment.iterationListener{i});
+                delete(obj.resultsListener{i});
             end
         end
         

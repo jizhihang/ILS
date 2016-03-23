@@ -133,7 +133,8 @@ classdef Control < handle
                     obj.results(obj.results==0)=NaN;
                     y = mode(obj.results,1);
                 otherwise
-                    error('Not a valid fusion method.');
+                    warning('A valid fusion method is not set.');
+                    return
             end
             Y = y;
         end

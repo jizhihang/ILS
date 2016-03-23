@@ -22,13 +22,13 @@ classdef ComputerVision < RemoteAgent
 %             [A.DNNnet, A.SVMmodel] = Initialize();
             net=load('imagenet-vgg-verydeep-16.mat');
             dnn = net;
-            for i=1:length(net.layers)
-                try
-                    dnn.layers{i}.weights{1}=gpuArray(net.layers{i}.weights{1});
-                    dnn.layers{i}.weights{2}=gpuArray(net.layers{i}.weights{2});
-                catch
-                end
-            end
+%             for i=1:length(net.layers)
+%                 try
+%                     dnn.layers{i}.weights{1}=gpuArray(net.layers{i}.weights{1});
+%                     dnn.layers{i}.weights{2}=gpuArray(net.layers{i}.weights{2});
+%                 catch
+%                 end
+%             end
             A.DNNnet = dnn;
             tmp = load('SVMmodel');
             A.SVMmodel = tmp.svmModel;
@@ -78,7 +78,8 @@ classdef ComputerVision < RemoteAgent
                 Im = single(Images{i}); % convert to single
                 Im = imresize(Im, net.normalization.imageSize(1:2)); % re-size
                 Im = Im - net.normalization.averageImage; % subtract mean
-                imGpu = gpuArray(Im);
+%                 imGpu = gpuArray(Im);
+                imGpu = Im;
                 res = vl_simplenn(net, imGpu); % extract features
                 tmp = double(gather(squeeze(res(layer).x)));
                 features(i,:) = tmp(:);

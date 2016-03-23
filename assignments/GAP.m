@@ -80,7 +80,7 @@ classdef GAP < Assignment
                         return
                     end
                 case 'beginExperiment'
-                    obj.assignmentMatrix(:,1:min(25,size(obj.assignmentMatrix,2))) = true;
+                    obj.assignmentMatrix(:,1:min(50,size(obj.assignmentMatrix,2))) = true;
             end
             for i = 1:length(obj.agentIndex)
                 if ~any(obj.assignmentMatrix(i,:))
@@ -133,6 +133,10 @@ classdef GAP < Assignment
             obj.assignmentMatrix(:) = false;
             temp(obj.value==0) = 0;
             obj.value = temp;
+            if all(obj.value==0)
+                notify(obj.control,'experimentComplete');
+                return
+            end
             [v,Aineq,bineq,Aeq,beq] = convertProblem(...
                 obj.value(:,~obj.imageCompletion),...
                 repmat(obj.cost,1,length(find(~obj.imageCompletion))),...

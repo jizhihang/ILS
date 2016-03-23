@@ -80,12 +80,17 @@ function gui = experiment_interface(experiment)
                     editBoxText.String = 'Enter iteration interval length in seconds: ';
                     editBoxText.Visible = 'on';
                     editBox.Visible = 'on';
-                otherwise
+                case 'serial'
                     Assignment = str{val};
                     AssignInfo = 1;
                     editBoxText.String = 'Enter batch size to send to the CV: ';
                     editBoxText.Visible = 'on';
                     editBox.Visible = 'on';
+                case 'all'
+                    Assignment = str{val};
+                    changeAssignment(experiment.control,str{val});
+                otherwise
+                    return
             end
         end
     end

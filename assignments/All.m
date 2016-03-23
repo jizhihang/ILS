@@ -24,6 +24,7 @@ classdef All < Assignment
             A.iterationListener = addlistener(A,'iterationComplete',...
                 @A.handleAssignment);
             A.agentIndex = false(length(control.agents),1);
+            A.iterationStatus = A.agentIndex;
         end
         
         %------------------------------------------------------------------

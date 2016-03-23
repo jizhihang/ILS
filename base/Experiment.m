@@ -84,8 +84,11 @@ classdef Experiment < handle
             end
             fprintf('Experiment complete.\n')
             if ~isempty(obj.labels)
-                fprintf('Balanced accuracy: %.3f\n',...
-                    balancedAccuracy(obj.control.labels,obj.labels));
+                try
+                    fprintf('Balanced accuracy: %.3f\n',...
+                        balancedAccuracy(obj.control.labels,obj.labels));
+                catch
+                end
             end
         end
         
