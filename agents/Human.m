@@ -25,7 +25,8 @@ classdef Human < RemoteAgent
             A@RemoteAgent('human',remotePort,imageDirectory);
             A.gui = [];
             A.response = [];
-            A.iterationListener = cell(0);
+            A.iterationListener = addlistener(A,'iterationComplete',...
+                @A.sendResponse);
         end
         
         %------------------------------------------------------------------
@@ -40,14 +41,13 @@ classdef Human < RemoteAgent
             if strcmp(char(X)','complete')
                 terminate(obj);
                 close(obj.gui);
+                delete(obj.iterationListener);
             else
                 images = getImages(obj,X); % gets images from directory
                 if isempty(obj.gui)
                     obj.gui = human_interface(obj,images,true);
-                    obj.iterationListener = addlistener(obj,...
-                        'iterationComplete',@obj.sendResponse);
                 else
-                    obj.gui = human_interface(obj,images,false);
+                    human_interface(obj,images,false);
                 end
             end
         end
@@ -63,7 +63,6 @@ classdef Human < RemoteAgent
             fprintf('Human completed classification of %u images.\n',...
                 length(obj.response))
             obj.response = [];
-            delete(obj.iterationListener);
         end
         
         %------------------------------------------------------------------
