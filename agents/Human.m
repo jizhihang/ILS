@@ -3,13 +3,13 @@ classdef Human < RemoteAgent
 % which the user provides binary classification of images.
     
     properties
-        gui
-        response
-        iterationListener
+        gui % Interface for human user
+        response % Classification results from current iteration
+        iterationListener % Listener for completion of iteration
     end
     
     events
-        iterationComplete
+        iterationComplete % Event triggered by classification of all assigned images in current iteration
     end
     
     methods
@@ -17,6 +17,8 @@ classdef Human < RemoteAgent
         % Class constructor:
         
         function A = Human(remotePort,imageDirectory)
+        % HUMAN is the class constructor for the Human remote agent. It
+        % initializes an empty GUI, response, and iteration listener.
             if nargin < 1
                 error('Too few parameters for class construction.');
             end
@@ -27,7 +29,7 @@ classdef Human < RemoteAgent
         end
         
         %------------------------------------------------------------------
-        % Dependencies:
+        % System-Level:
         
         function classifyImages(obj,src,event)
         % CLASSIFYIMAGES is a callback function which is initiated by the
@@ -39,24 +41,27 @@ classdef Human < RemoteAgent
                 terminate(obj);
             else
                 images = getImages(obj,X); % gets images from directory
-                % classify images
                 obj.gui = human_interface(obj,images);
                 obj.iterationListener = addlistener(obj,...
                     'iterationComplete',@obj.sendResponse);
             end
         end
         
+        %------------------------------------------------------------------
+        % Dependencies:
+        
         function sendResponse(obj,src,event)
         % SENDRESPONSE is a function called from the human interface gui
         % that will send the classified image labels back to the control
         % server as soon as the human agent has finished.
-%             close(obj.gui);
             fwrite(obj.socket,obj.response(:));
             fprintf('Human completed classification of %u images.\n',...
                 length(obj.response))
+            obj.response = [];
+            delete(obj.iterationListener);
         end
-        %------------------------------------------------------------------
         
+        %------------------------------------------------------------------
     end
     
 end

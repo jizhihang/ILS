@@ -24,8 +24,11 @@ classdef Experiment < handle
         % EXPERIMENT is the class constructor which will set the data and
         % label properties (not necessary), instantiate a control object,
         % open a GUI, and scan for agents.
+            if nargin < 1
+                error('Not enough arguments to start an experiment');
+            end
             delete(instrfindall); % delete any existing udp objects
-            E.localPort = 9998; % **Hard-coded**
+            E.localPort = 9999; % **Hard-coded**
             E.control = Control;
             E.socket = udp('0.0.0.0','LocalHost','localHost',...
                 'LocalPort',E.localPort);
@@ -91,13 +94,6 @@ classdef Experiment < handle
             remotePort = event.Data.DatagramPort;
             addAgent(obj.control,type,uniqueLocalPort,remoteHost,...
                 remotePort);
-        end
-        
-        function newData(obj,X,Y)
-        % NEWDATA calls the ADDDATA function from the control object. X
-        % must reference images from the existing image directory.
-            addData(obj.control,X);
-            obj.labels = [obj.labels;Y(:)];
         end
         
         function P = newPort(obj)

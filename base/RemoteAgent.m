@@ -25,13 +25,15 @@ classdef (Abstract) RemoteAgent < Agent
             A.status = false;
             A.port = remotePort;
             if nargin >= 2
-                % **This has to be hard-coded for the time being**
+                %-----**This has to be hard-coded for the time being**-----
                 localHost = 'localHost';
-                localPort = 9998;
+                localPort = 9999;
+                %----------------------------------------------------------
                 if nargin == 3
-                    addpath(imageDirectory);
-                    A.imdir = dir(imageDirectory);
-                    A.imdir = A.imdir(3:end);
+                    A.imdir = imageDirectory;
+                    addpath(A.imdir);
+%                     A.imdir = dir(imageDirectory);
+%                     A.imdir = A.imdir(3:end);
                 else
                     A.imdir = '';
                 end
@@ -110,16 +112,14 @@ classdef (Abstract) RemoteAgent < Agent
             fprintf('Agent terminated.\n')
         end
         
-        function image = getImages(obj,index)
+        function imageQueue = getImages(obj,index)
         % GETIMAGE loads an image from the specified directory. It can take
         % a vector argument and will return a cell array of images.
-            if strcmp(obj.imdir,'')
-                warning('Function not available for prototype.');
-            end
-            image = cell(length(index),1);
+            imageQueue = cell(length(index),1);
             for i = 1:length(index)
-                image{i} = imread([int2str(i) '.jpg']);
-%                 image{i} = imread(obj.imdir(index(i)).name); % <- this way does 
+%                 imageQueue{i} = imread([int2str(i) '.jpg']);
+                imageQueue{i} = imread([int2str(index(i)) '.jpg']); % I think this is what we want
+%                 imageQueue{i} = imread(obj.imdir(index(i)).name); % <- this way does 
                     % not work as intended because the dir command sorts
                     % images alphabetically, and thus they no-longer match
                     % up with class labels
@@ -130,7 +130,12 @@ classdef (Abstract) RemoteAgent < Agent
     end
     
     methods (Abstract)
+        %------------------------------------------------------------------
+        % System-Level:
+        
         classifyImages(obj,src,event)
+        
+        %------------------------------------------------------------------
     end
     
 end

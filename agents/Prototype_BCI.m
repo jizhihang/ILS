@@ -26,7 +26,7 @@ classdef Prototype_BCI < RemoteAgent
         end
         
         %------------------------------------------------------------------
-        % Dependencies:
+        % System-Level:
         
         function Y = classifyImages(obj,src,event)
         % CLASSIFYIMAGES is a callback function which is initiated by the

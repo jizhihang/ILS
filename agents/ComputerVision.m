@@ -36,7 +36,7 @@ classdef ComputerVision < RemoteAgent
         end
         
         %------------------------------------------------------------------
-        % Dependencies:
+        % System-Level:
         
         function Y = classifyImages(obj,src,event)
         % CLASSIFYIMAGES is a callback function which is initiated by the
@@ -60,6 +60,9 @@ classdef ComputerVision < RemoteAgent
             end
         end
         
+        %------------------------------------------------------------------
+        % Dependencies:
+        
         function features = ExtractFeatures(obj,Images,net,layer)
         % EXTRACTFEATURES is CV module that runs images through a
         % pre-trained deep convolutional neural network (DCNN), and
@@ -67,22 +70,23 @@ classdef ComputerVision < RemoteAgent
         % the top layer). 
         % Input: cell array of images
         % Output: 2d matrix of features (images x features)
-        if(nargin<4)
-            layer = 37;
-        end
+            if(nargin<4)
+                layer = 37;
+            end
 
-        for i=1:length(Images)
-            Im = single(Images{i});                                      % convert to single
-            Im = imresize(Im, net.normalization.imageSize(1:2));        % re-size
-            Im = Im - net.normalization.averageImage;                   % subtract mean
-            imGpu = gpuArray(Im);
-            res = vl_simplenn(net, imGpu);                                 % extract features
-            tmp = double(gather(squeeze(res(layer).x)));
-            features(i,:) = tmp(:);
-        end
+            for i=1:length(Images)
+                Im = single(Images{i}); % convert to single
+                Im = imresize(Im, net.normalization.imageSize(1:2)); % re-size
+                Im = Im - net.normalization.averageImage; % subtract mean
+                imGpu = gpuArray(Im);
+                res = vl_simplenn(net, imGpu); % extract features
+                tmp = double(gather(squeeze(res(layer).x)));
+                features(i,:) = tmp(:);
+            end
         end
         
-        function [pred_label, score, accuracy] = ClassifyFeatures(obj,Features, Model,scale, options, Labels)
+        function [pred_label, score, accuracy] = ClassifyFeatures(obj,...
+                Features, Model,scale, options, Labels)
         % CLASSIFYFEATURES is CV module that uses a shalow learner (SVM) to
         % classify extracted image features. An already trained SVM model
         % must be provided for classifcation. 
@@ -97,19 +101,24 @@ classdef ComputerVision < RemoteAgent
             end
             % predict image labels
             Features(Features<0)=0;
-            Features = (Features - scale.scale_min) / (scale.scale_max - scale.scale_min);
-            [pred_label, accuracy, score] = svmpredict(Labels',Features,Model,options); 
+            Features = (Features - scale.scale_min) /...
+                (scale.scale_max - scale.scale_min);
+            [pred_label, accuracy, score] = svmpredict(Labels',...
+                Features,Model,options); 
         end
-        %------------------------------------------------------------------
         
+        %------------------------------------------------------------------
     end
     
     methods (Static)
+        %------------------------------------------------------------------
+        % Dependencies:
+        
         function [dnn, model] = Initialize() 
-        % INITIALIZE loads the DNN into GPU memory to be usable for 
-        % fast feature extraction of images, and loads a pre-trained SVM
-        % model. In future versions, we will have a feature to train/re-train
-        % an SVM model on the fly. 
+        % INITIALIZE loads the DNN into GPU memory to be usable for fast
+        % feature extraction of images, and loads a pre-trained SVM model.
+        % In future versions, we will have a feature to train/re-train an
+        % SVM model on the fly.
             net=load('imagenet-vgg-verydeep-16.mat');
             dnn = net;
             for i=1:length(net.layers)
@@ -121,6 +130,8 @@ classdef ComputerVision < RemoteAgent
             end
             model = load('SVMmodel');
         end
+        
+        %------------------------------------------------------------------
     end
     
 end

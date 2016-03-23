@@ -1,6 +1,12 @@
 classdef GAP < Assignment
-% ALL is an assignment type in which all images are assigned in batch to
-% all agents. It results in one iteration.
+% GAP is an assignment architecture that assigns images in parallel
+% according to a generalized assignment problem (GAP) formulation. It
+% infers agent reliability and image label confidence from the spectral
+% meta-learner (SML) at the completion of each iteration. These results are
+% used for the GAP formulation in the subsequent iteration. It requires
+% both an iteration interval (in seconds) and a confidence threshold, which
+% specifies the confidence of an image label to consider it complete and no
+% longer assign it.
     
     properties
         iterationStatus % Boolean array which tracks the receipt of classification results
@@ -20,6 +26,9 @@ classdef GAP < Assignment
     end
     
     methods
+        %------------------------------------------------------------------
+        % Class constructor:
+        
         function A = GAP(control,iterationInterval,confThreshold)
         % ALL is the class constructor for assignment type all. It calls
         % the superclass constructor of assignment and adds a iteration
@@ -55,6 +64,10 @@ classdef GAP < Assignment
             A.imageCompletion = false(size(A.imageConfidence));
             A.threshold = confThreshold;
         end
+        
+        %------------------------------------------------------------------
+        % System-level:
+        
         function handleAssignment(obj,src,event)
         % HANDLEASSIGNMENT generates an all true assignment matrix and
         % assigns the images on the first call. When called again, it ends
@@ -94,6 +107,15 @@ classdef GAP < Assignment
                 return
             end
         end
+        function terminate(obj)
+        % TERMINATE will delete all listeners in the assignment
+            delete(obj.iterationListener);
+            terminate@Assignment(obj);
+        end
+        
+        %------------------------------------------------------------------
+        % Dependencies:
+        
         function getAssignment(obj)
         % GETASSIGNMENT uses the GAP formulation to generate a new
         % assignmentMatrix.
@@ -129,6 +151,7 @@ classdef GAP < Assignment
                 warning('Problem has no feasible solutions.');
             end
         end
-    end
     
+    %----------------------------------------------------------------------
+    end
 end

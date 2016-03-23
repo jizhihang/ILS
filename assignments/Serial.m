@@ -1,5 +1,5 @@
 classdef Serial < Assignment
-% SERIAL is an assignment type which only works with one human and one CV.
+% SERIAL is an assignment type which works with one human and one CV.
 % Images are assigned in order to the CV according to the batch size, as
 % the CV results arrive, some of those images are assigned to the human
 % according to policy. The human results are accumulated asynchronously
@@ -24,6 +24,9 @@ classdef Serial < Assignment
     end
     
     methods
+        %------------------------------------------------------------------
+        % Class constructor:
+        
         function A = Serial(control,batch,policy)
         % SERIAL is the class constructor for assignment type serial. It
         % calls the superclass constructor of Assignment and initializes
@@ -53,6 +56,10 @@ classdef Serial < Assignment
             A.humanAssignmentMax = 0;
             A.humanAssignmentTracker = zeros(length(A.control.data),1);
         end
+        
+        %------------------------------------------------------------------
+        % System-level:
+        
         function handleAssignment(obj,src,event)
         % HANDLEASSIGNMENT handles three different events. When notified by
         % Experiment to start the experiment, it generates an initial
@@ -114,15 +121,27 @@ classdef Serial < Assignment
                 notify(obj,'iterationComplete');
             end
         end
-        function assignment = getHumanAssignment(obj,cvResults)
+        function terminate(obj)
+        % TERMINATE will delete all listeners in the assignment
+            delete(obj.iterationListener);
+            delete(obj.humanUpdateListener);
+            terminate@Assignment(obj);
+        end
+        
+        %------------------------------------------------------------------
+        % Dependencies:
+        
+        function tasks = getHumanAssignment(obj,cvResults)
         % GETHUMANASSIGNMENT assigns a subset of images to the human
         % according to the CV results and policy.
             temp = false(size(cvResults));
             temp(cvResults==-1) = rand(size(temp(cvResults==-1))) < obj.policy(1);
             temp(cvResults==1) = rand(size(temp(cvResults==1))) < obj.policy(2);
-            assignment = obj.assignmentMatrix(obj.cvIndex,:);
-            assignment(assignment) = temp;
+            tasks = obj.assignmentMatrix(obj.cvIndex,:);
+            tasks(tasks) = temp;
         end
+        
+        %------------------------------------------------------------------
     end
     
 end

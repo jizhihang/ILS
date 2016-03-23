@@ -13,6 +13,9 @@ classdef All < Assignment
     end
     
     methods
+        %------------------------------------------------------------------
+        % Class constructor:
+        
         function A = All(control)
         % ALL is the class constructor for assignment type all. It calls
         % the superclass constructor of assignment and adds a iteration
@@ -22,6 +25,10 @@ classdef All < Assignment
                 @A.handleAssignment);
             A.agentIndex = false(length(control.agents),1);
         end
+        
+        %------------------------------------------------------------------
+        % System-level:
+        
         function handleAssignment(obj,src,event)
         % HANDLEASSIGNMENT generates an all true assignment matrix and
         % assigns the images on the first call. When called again, it ends
@@ -47,6 +54,12 @@ classdef All < Assignment
                 notify(obj,'iterationComplete');
             end
         end
+        function terminate(obj)
+        % TERMINATE will delete all listeners in the assignment
+            delete(obj.iterationListener);
+            terminate@Assignment(obj);
+        end
+        %------------------------------------------------------------------
     end
     
 end

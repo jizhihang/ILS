@@ -11,31 +11,34 @@ classdef (Abstract) Assignment < handle
     
     properties
         control % Associated control object
-        type % Assignment type (options): 'random', 'gap', 'all', 'serial'
-        assignmentMatrix % boolean array which tracks assignments to CV and human agents
+        type % Assignment type (options): 'gap', 'all', 'serial'
+        assignmentMatrix % boolean matrix which controls assignments to agents
         resultsListener % Listener for resultsReady event
         beginExperimentListener % Listener for beginExperiment
     end
     
     methods
+        %------------------------------------------------------------------
+        % Class constructor:
+        
         function A = Assignment(control,type)
         % ASSIGNMENT is the class constructor for the assignment class. It
         % will declare 
             A.control = control;
             A.type = type;
             A.assignmentMatrix = false(length(A.control.agents),length(A.control.data));
-            A.resultsListener = cell(0);
             A.beginExperimentListener = addlistener(control,...
                 'beginExperiment',@A.handleAssignment);
-        end
-        function addResultsListener(obj)
-        % ADDRESULTSLISTENER addes the listener after the agents have been
-        % added to the system.
-            for i = 1:length(obj.control.agents)
-                obj.resultsListener{end+1} = addlistener(...
-                    obj.control.agents{i},'resultsReady',@obj.handleResults);
+            A.resultsListener = cell(length(A.control.agents),1);
+            for i = 1:length(A.control.agents)
+                A.resultsListener{i} = addlistener(...
+                    A.control.agents{i},'resultsReady',@A.handleResults);
             end
         end
+        
+        %------------------------------------------------------------------
+        % Dependencies:
+        
         function assignImages(obj,agent)
         % ASSIGNIMAGES uses an assignmentmatrix (boolean numAgents x
         % numImages) to send image assignments to remote agents.
@@ -51,20 +54,33 @@ classdef (Abstract) Assignment < handle
                 end
             end
         end
-        function updateAssignment(obj)
-        % UPDATEASSIGNMENT updates any fields that need to be adjusted when
-        % data or agents are added to the experiment.
-            A.assignmentMatrix = false(length(obj.control.agents),length(obj.control.data));
+        
+        %------------------------------------------------------------------
+        % System-Level:
+        
+        function terminate(obj)
+        % TERMINATE will delete all listeners in the assignment
+            delete(obj.beginExperimentListener);
+            for i = 1:length(obj.control.agents)
+                delete(obj.assignment.iterationListener{i});
+            end
         end
+        
+        %------------------------------------------------------------------
     end
     
     methods (Abstract)
+        %------------------------------------------------------------------
+        % System-Level:
+        
         handleAssignment(obj,src,event)
         % GENERATEASSIGNMENT must also check for experiment completion and
         % notify control
         handleResults(obj,src,event)
         % HANDLERESULTS must also check for iteration completion and call
         % handleassignemnt
+        
+        %------------------------------------------------------------------
     end
     
 end

@@ -3,7 +3,7 @@ function gui = experiment_interface(experiment)
     gui = figure('Visible','off','Position',[300,300,500,450]);
     infoText = uicontrol('Style','text','String','Select "Start Scan".',...
         'Position',[0 375 500 50],'FontSize',14);
-    pannel = uipanel('Position',[0.15 0.15 0.7 0.7]);
+    panel = uipanel('Position',[0.15 0.15 0.7 0.7]);
     assignmentText = uicontrol('Style','text','String','Assignment',...
         'Position',[100,305,100,50],'TooltipString',...
         'Select Assignment method (this is done after remote agents are connected).');
@@ -51,7 +51,6 @@ function gui = experiment_interface(experiment)
     
     function startButton_callback(~,~) 
     % STARTBUTTON_CALLBACK starts the experiment
-        addResultsListener(experiment.control.assignment);
         notify(experiment.control,'beginExperiment');
         infoText.String = 'Experiment Started.';
     end
@@ -69,7 +68,7 @@ function gui = experiment_interface(experiment)
     end
 
     function assignmentMenu_callback(source,~) 
-    % ASSIGNMENTMENU_CALLBACK uses the uicontrol in the gui to sets the 
+    % ASSIGNMENTMENU_CALLBACK uses the uicontrol in the gui to set the 
     % assignment property of the control
         str = source.String;
         val = source.Value;

@@ -27,14 +27,18 @@ classdef Control < handle
         % Class constructor:
         
         function C = Control
-        % CONTROL is the class constructor. It will set the preliminary
-        % assignment and fusion methods.
-            C.fusion = 'sum';
+        % CONTROL is the class constructor. It will create an empty control
+        % object. All properties are set from Experiment through control
+        % methods.
+            C.fusion = '';
             C.assignment = cell(0);
             C.data = [];
             C.agents = cell(0);
             C.results = [];
         end
+        
+        %------------------------------------------------------------------
+        % System-level:
         
         function addAgent(obj,type,localPort,remoteHost,remotePort)
         % ADDAGENT will add a local agent to the agents array by calling
@@ -43,21 +47,20 @@ classdef Control < handle
             index = length(obj.agents)+1;
             obj.agents{index} = LocalAgent(type,localPort,remoteHost,...
                 remotePort,obj);
-            updateControl(obj);
+            obj.results = zeros(length(obj.agents),length(obj.data));
         end
         
         function addData(obj,newData)
         % ADDDATA will add data to control and update the size of the
         % results field.
             obj.data = [obj.data;newData(:)];
-            updateControl(obj);
+            obj.results = zeros(length(obj.agents),length(obj.data));
         end
         
         function changeAssignment(obj,assignmentType,varargin)
         % CHANGEASSIGNMENT updates the assignment object property
             if ~isempty(obj.assignment)
-                delete(obj.assignment.beginExperimentListener);
-                delete(obj.assignment);
+                terminate(obj.assignment);
             end
             switch assignmentType
                 case 'all'
@@ -91,26 +94,6 @@ classdef Control < handle
             end
         end
         
-        function updateControl(obj)
-        % UPDATE will update the size of the results field according
-        % to the current size of agents and data as well as the properties
-        % of assignment.
-            if ~isempty(obj.assignment)
-                updateAssignment(obj.assignment);
-            end
-            obj.results = zeros(length(obj.agents),length(obj.data));
-        end
-        
-        %------------------------------------------------------------------
-        % System-level:
-        
-        function start(obj)
-        % START will populate the results property using the given
-        % assignment module
-            addResultsListener(obj.assignment);
-            handleAssignment(obj.assignment);
-        end
-        
         function terminate(obj)
         % TERMINATE will close and delete the direct interface sockets for
         % all agents in the control object.
@@ -118,6 +101,7 @@ classdef Control < handle
             for i = agentIndex
                 terminate(obj.agents{i});
             end
+            terminate(obj.assignment);
         end
         
         %------------------------------------------------------------------
