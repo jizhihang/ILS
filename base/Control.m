@@ -73,10 +73,10 @@ classdef Control < handle
                         warning('Inappropriate arguments for serial assignment.')
                         obj.assignment = All(obj);
                     end
-                case 'serialPrototype'
+                case 'serial_bci'
                     try
-                        obj.assignment = SerialPrototype(obj,...
-                            varargin{1},varargin{2});
+                        obj.assignment = serial(obj,varargin{1},...
+                            varargin{2},varargin{3});
                     catch
                         warning('Inappropriate arguments for serial assignment.')
                         obj.assignment = All(obj);
