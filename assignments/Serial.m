@@ -100,7 +100,7 @@ classdef Serial < Assignment
         % trigger distinct calls to handleAssignment through different
         % events.
             fprintf('Results received from %s.\n',src.type);
-            if strcmp(src.type,'human')
+            if strcmp(src.type,'human') || strcmp(src.type,'prototype_human')
                 obj.humanAssignment = obj.humanAssignment + 1;
                 obj.control.results(obj.humanIndex,...
                     obj.humanAssignmentTracker==obj.humanAssignment)...

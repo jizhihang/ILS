@@ -35,8 +35,8 @@ classdef SerialWithBCI < Assignment
         % Class constructor:
         
         function A = SerialWithBCI(control,batch,policy_human,policy_bci)
-        % SERIAL is the class constructor for assignment type serial. It
-        % calls the superclass constructor of Assignment and initializes
+        % SERIALWITH is the class constructor for assignment type serial.
+        % It calls the superclass constructor of Assignment and initializes
         % all necessary properties and listeners.
             A@Assignment(control,'serial');
             A.batchSize = batch;
@@ -114,36 +114,57 @@ classdef SerialWithBCI < Assignment
         % trigger distinct calls to handleAssignment through different
         % events.
             fprintf('Results received from %s.\n',src.type);
-            if strcmp(src.type,'human')
-                obj.humanAssignment = obj.humanAssignment + 1;
-                obj.control.results(obj.humanIndex,...
-                    obj.humanAssignmentTracker==obj.humanAssignment)...
-                    = readResults(src)';
-                if obj.humanAssignment == obj.humanAssignmentMax
-                    if obj.finalIteration
+            switch src.type
+                case 'human'
+                    obj.humanAssignment = obj.humanAssignment + 1;
+                    obj.control.results(obj.humanIndex,...
+                        obj.humanAssignmentTracker==obj.humanAssignment)...
+                        = readResults(src)';
+                    if obj.humanAssignment == obj.humanAssignmentMax
+                        if obj.finalIteration
+                            notify(obj.control,'experimentComplete');
+                        end
+                    end
+                case 'bci'
+                    results = readResults(src)';
+                    obj.control.results(obj.cvIndex,...
+                        obj.assignmentMatrix(obj.cvIndex,:)) = results;
+                    newAssignment = getHumanAssignment(obj,'bci',results);
+                    if any(newAssignment)
+                        obj.humanAssignmentMax = obj.humanAssignmentMax + 1;
+                        obj.humanAssignmentTracker(newAssignment)...
+                            = obj.humanAssignmentMax;
+                        obj.assignmentMatrix(obj.humanIndex,:) = false;
+                        obj.assignmentMatrix(obj.humanIndex,:) = ...
+                            obj.humanAssignmentTracker == obj.humanAssignmentMax;
+                        assignImages(obj,obj.humanIndex);
+                        if obj.finalCVIteration
+                            obj.finalIteration = true;
+                        end
+                    elseif obj.finalCVIteration
                         notify(obj.control,'experimentComplete');
                     end
-                end
-            else
-                results = readResults(src)';
-                obj.control.results(obj.cvIndex,...
-                    obj.assignmentMatrix(obj.cvIndex,:)) = results;
-                newAssignment = getHumanAssignment(obj,results);
-                if any(newAssignment)
-                    obj.humanAssignmentMax = obj.humanAssignmentMax + 1;
-                    obj.humanAssignmentTracker(newAssignment)...
-                        = obj.humanAssignmentMax;
-                    obj.assignmentMatrix(obj.humanIndex,:) = false;
-                    obj.assignmentMatrix(obj.humanIndex,:) = ...
-                        obj.humanAssignmentTracker == obj.humanAssignmentMax;
-                    assignImages(obj,obj.humanIndex);
-                    if obj.finalCVIteration
-                        obj.finalIteration = true;
+                    notify(obj,'iterationComplete');
+                case 'cv'
+                    results = readResults(src)';
+                    obj.control.results(obj.cvIndex,...
+                        obj.assignmentMatrix(obj.cvIndex,:)) = results;
+                    newAssignment = getHumanAssignment(obj,'cv',results);
+                    if any(newAssignment)
+                        obj.humanAssignmentMax = obj.humanAssignmentMax + 1;
+                        obj.humanAssignmentTracker(newAssignment)...
+                            = obj.humanAssignmentMax;
+                        obj.assignmentMatrix(obj.humanIndex,:) = false;
+                        obj.assignmentMatrix(obj.humanIndex,:) = ...
+                            obj.humanAssignmentTracker == obj.humanAssignmentMax;
+                        assignImages(obj,obj.humanIndex);
+                        if obj.finalCVIteration
+                            obj.finalIteration = true;
+                        end
+                    elseif obj.finalCVIteration
+                        notify(obj.control,'experimentComplete');
                     end
-                elseif obj.finalCVIteration
-                    notify(obj.control,'experimentComplete');
-                end
-                notify(obj,'iterationComplete');
+                    notify(obj,'iterationComplete');
             end
         end
         function terminate(obj)
@@ -155,13 +176,20 @@ classdef SerialWithBCI < Assignment
         %------------------------------------------------------------------
         % Dependencies:
         
-        function tasks = getHumanAssignment(obj,cvResults)
-        % GETHUMANASSIGNMENT assigns a subset of images to the human
-        % according to the CV results and policy.
-            temp = false(size(cvResults));
-            temp(cvResults==-1) = rand(size(temp(cvResults==-1))) < obj.policy(1);
-            temp(cvResults==1) = rand(size(temp(cvResults==1))) < obj.policy(2);
-            tasks = obj.assignmentMatrix(obj.cvIndex,:);
+        function tasks = getAssignment(obj,src,results)
+        % GETHUMANASSIGNMENT assigns a subset of images to the BCI or human
+        % agent according to the CV or human results and policy.
+            if strcmp(src,'cv')
+                tempPolicy = obj.policy_bci;
+                tempIndex = obj.cvIndex;
+            else
+                tempPolicy = obj.policy_human;
+                tempIndex = obj.bciIndex;
+            end
+            temp = false(size(results));
+            temp(results==-1) = rand(size(temp(results==-1))) < tempPolicy(1);
+            temp(results==1) = rand(size(temp(results==1))) < tempPolicy(2);
+            tasks = obj.assignmentMatrix(tempIndex,:);
             tasks(tasks) = temp;
         end
         
