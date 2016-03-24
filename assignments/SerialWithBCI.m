@@ -1,21 +1,28 @@
-classdef Serial < Assignment
-% SERIAL is an assignment type which works with one human and one CV.
-% Images are assigned in order to the CV according to the batch size, as
-% the CV results arrive, some of those images are assigned to the human
-% according to policy. The human results are accumulated asynchronously
-% while the control process iterates through assigning the entire database
-% to the CV.
+classdef SerialWithBCI < Assignment
+% SERIALWITHBCI is an assignment type which works with one human, one BCI,
+% and one CV. Images are assigned in order to the CV according to the batch
+% size, as the CV results arrive, some of those images are assigned to the
+% BCI agent. In turn, as those return, some images are assigned to the
+% human according. Both assignment probabilities are handled with policy
+% variables. The BCI and human results are accumulated asynchronously while
+% the control process iterates through assigning the entire database to the
+% CV.
     
     properties
         policy % n*1 vector which contains the release probability for each class
         humanIndex % index of human agent
+        bciIndex % index of BCI agent
         cvIndex % index of CV agent
         batchSize % size of assignment blocks to CV
         iterationListener % listener for iterationComplete event
-        humanAssignment % current assignment iteration awaiting results
+        humanAssignment % current human assignment iteration awaiting results
         humanAssignmentMax % most recent assignment iteration for human
         humanAssignmentTracker % array of all images assigned to human
-        finalIteration % boolean which identifies the human beginning the final batch
+        bciAssignment % current BCI assignment iteration awaiting results
+        bciAssignmentMax % most recent assignment iteration for BCI
+        bciAssignmentTracker % array of all images assigned to BCI
+        finalHumanIteration % boolean which identifies the human beginning the final batch
+        finalBCIIteration % boolean which identifies the BCI beginning the final batch
         finalCVIteration % boolean which identifies the CV beginning the final batch
     end
     
@@ -27,25 +34,28 @@ classdef Serial < Assignment
         %------------------------------------------------------------------
         % Class constructor:
         
-        function A = Serial(control,batch,policy)
+        function A = SerialWithBCI(control,batch,policy_human,policy_bci)
         % SERIAL is the class constructor for assignment type serial. It
         % calls the superclass constructor of Assignment and initializes
         % all necessary properties and listeners.
             A@Assignment(control,'serial');
             A.batchSize = batch;
-            A.policy = policy;
+            A.policy_human = policy_human;
+            A.policy_bci = policy_bci;
             for i = 1:length(control.agents)
                 switch control.agents{i}.type 
                     case 'human' | 'prototype_human'
                         A.humanIndex = i;
+                    case 'bci' | 'prototype_bci'
+                        A.bciIndex = i;
                     case 'cv' | 'prototype_cv'
                         A.cvIndex = i;
                 end
             end
-            if isempty(A.humanIndex) || isempty(A.cvIndex)
+            if isempty(A.humanIndex) || isempty(A.cvIndex) || isempty(A.bciIndex)
                 error('Serial policy requires a human and a CV agent.')
             end
-            if A.humanIndex > 2 || A.cvIndex > 2
+            if A.humanIndex > 3 || A.cvIndex > 3 || A.bciIndex > 3
                 error('Too many agents have been added to the sytem.')
             end
             A.iterationListener = addlistener(A,'iterationComplete',...
@@ -53,7 +63,11 @@ classdef Serial < Assignment
             A.humanAssignment = 0;
             A.humanAssignmentMax = 0;
             A.humanAssignmentTracker = zeros(length(A.control.data),1);
-            A.finalIteration = false;
+            A.bciAssignment = 0;
+            A.bciAssignmentMax = 0;
+            A.bciAssignmentTracker = zeros(length(A.control.data),1);
+            A.finalHumanIteration = false;
+            A.finalBCIIeration = false;
             A.finalCVIteration = false;
         end
         

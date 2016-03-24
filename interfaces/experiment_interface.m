@@ -8,7 +8,7 @@ function gui = experiment_interface(experiment)
         'Position',[100,305,100,50],'TooltipString',...
         'Select Assignment method (this is done after remote agents are connected).');
     assignmentMenu = uicontrol('Style','popupmenu','String',{'','all',...
-        'gap','serial','serialPrototype'},'Position',[100,300,100,50],...
+        'gap','serial','serial_bcis'},'Position',[100,300,100,50],...
         'Callback',@assignmentMenu_callback,'TooltipString',...
         'Select Assignment method (this is done after remote agents are connected).');
 	fusionText = uicontrol('Style','text','String','Fusion','Position',...
@@ -86,6 +86,12 @@ function gui = experiment_interface(experiment)
                     editBoxText.String = 'Enter batch size to send to the CV: ';
                     editBoxText.Visible = 'on';
                     editBox.Visible = 'on';
+                case 'serial_bci'
+                    Assignment = str{val};
+                    AssignInfo = 1;
+                    editBoxText.String = 'Enter batch size to send to the CV: ';
+                    editBoxText.Visible = 'on';
+                    editBox.Visible = 'on';
                 case 'all'
                     Assignment = str{val};
                     changeAssignment(experiment.control,str{val});
@@ -116,9 +122,8 @@ function gui = experiment_interface(experiment)
                         infoText.String = 'Select Fusion Method.';
                         changeAssignment(experiment.control,Assignment,interval,threshold);
                 end
-            otherwise
+            case 'serial'
                 switch AssignInfo
-                    
                     case 1
                         batchSize = str2double(source.String);
                         editBoxText.String = 'Enter release probability to human for class 1:';
@@ -130,6 +135,36 @@ function gui = experiment_interface(experiment)
                         editBox.String='';
                         AssignInfo = AssignInfo+1;
                     case 3
+                        policy(2,1) = str2double(source.String);
+                        editBoxText.Visible='off';
+                        editBox.Visible = 'off';
+                        editBox.String='';
+                        infoText.String = 'Select Fusion Method.';
+                        changeAssignment(experiment.control,Assignment,batchSize,policy);
+                end
+            case 'serial_bci'
+                switch AssignInfo
+                    case 1
+                        batchSize = str2double(source.String);
+                        editBoxText.String = 'Enter release probability to human for class 1:';
+                        editBox.String='';
+                        AssignInfo = AssignInfo+1;
+                    case 2
+                        policy(1,1) = str2double(source.String);
+                        editBoxText.String = 'Enter release probability to human for class 2:';
+                        editBox.String='';
+                        AssignInfo = AssignInfo+1;
+                    case 3
+                        batchSize = str2double(source.String);
+                        editBoxText.String = 'Enter release probability to human for class 1:';
+                        editBox.String='';
+                        AssignInfo = AssignInfo+1;
+                    case 4
+                        policy(1,1) = str2double(source.String);
+                        editBoxText.String = 'Enter release probability to human for class 2:';
+                        editBox.String='';
+                        AssignInfo = AssignInfo+1;
+                    case 5
                         policy(2,1) = str2double(source.String);
                         editBoxText.Visible='off';
                         editBox.Visible = 'off';
