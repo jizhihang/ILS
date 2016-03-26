@@ -35,11 +35,12 @@ classdef Serial < Assignment
             A.batchSize = batch;
             A.policy = policy;
             for i = 1:length(control.agents)
-                switch control.agents{i}.type 
-                    case 'human' | 'prototype_human'
-                        A.humanIndex = i;
-                    case 'cv' | 'prototype_cv'
-                        A.cvIndex = i;
+                if strcmp(control.agents{i}.type,'cv') || strcmp(control.agents{i}.type,'prototype_cv')
+                    A.cvIndex = i;
+                elseif strcmp(control.agents{i}.type,'human') || strcmp(control.agents{i}.type,'prototype_human')
+                    A.humanIndex = i;
+                else
+                    error('Only human and CV agents can be used in Serial.')
                 end
             end
             if isempty(A.humanIndex) || isempty(A.cvIndex)

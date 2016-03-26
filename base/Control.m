@@ -75,7 +75,7 @@ classdef Control < handle
                     end
                 case 'serial_bci'
                     try
-                        obj.assignment = serial(obj,varargin{1},...
+                        obj.assignment = SerialWithBCI(obj,varargin{1},...
                             varargin{2},varargin{3});
                     catch
                         warning('Inappropriate arguments for serial assignment.')

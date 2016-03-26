@@ -11,7 +11,7 @@ classdef (Abstract) Assignment < handle
     
     properties
         control % Associated control object
-        type % Assignment type (options): 'gap', 'all', 'serial'
+        type % Assignment type (options): 'gap', 'all', 'serial','serial_bci'
         assignmentMatrix % boolean matrix which controls assignments to agents
         resultsListener % Listener for resultsReady event
         beginExperimentListener % Listener for beginExperiment

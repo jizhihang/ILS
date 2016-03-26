@@ -9,7 +9,8 @@ classdef SerialWithBCI < Assignment
 % CV.
     
     properties
-        policy % n*1 vector which contains the release probability for each class
+        policy_bci % n*1 vector which contains the release probability to BCI for each class
+        policy_human % n*1 vector which contains the release probability to human for each class
         humanIndex % index of human agent
         bciIndex % index of BCI agent
         cvIndex % index of CV agent
@@ -38,22 +39,23 @@ classdef SerialWithBCI < Assignment
         % SERIALWITH is the class constructor for assignment type serial.
         % It calls the superclass constructor of Assignment and initializes
         % all necessary properties and listeners.
-            A@Assignment(control,'serial');
+            A@Assignment(control,'serial_bci');
             A.batchSize = batch;
             A.policy_human = policy_human;
             A.policy_bci = policy_bci;
             for i = 1:length(control.agents)
-                switch control.agents{i}.type 
-                    case 'human' | 'prototype_human'
-                        A.humanIndex = i;
-                    case 'bci' | 'prototype_bci'
-                        A.bciIndex = i;
-                    case 'cv' | 'prototype_cv'
-                        A.cvIndex = i;
+                if strcmp(control.agents{i}.type,'cv') || strcmp(control.agents{i}.type,'prototype_cv')
+                    A.cvIndex = i;
+                elseif strcmp(control.agents{i}.type,'bci') || strcmp(control.agents{i}.type,'prototype_bci')
+                    A.bciIndex = i;
+                elseif strcmp(control.agents{i}.type,'human') || strcmp(control.agents{i}.type,'prototype_human')
+                    A.humanIndex = i;
+                else
+                    error('Only human, BCI, and CV agents can be used in Serial with BCI.')
                 end
             end
             if isempty(A.humanIndex) || isempty(A.cvIndex) || isempty(A.bciIndex)
-                error('Serial policy requires a human and a CV agent.')
+                error('Serial with BCI policy requires a BCI, human, and a CV agent.')
             end
             if A.humanIndex > 3 || A.cvIndex > 3 || A.bciIndex > 3
                 error('Too many agents have been added to the sytem.')
@@ -67,7 +69,7 @@ classdef SerialWithBCI < Assignment
             A.bciAssignmentMax = 0;
             A.bciAssignmentTracker = zeros(length(A.control.data),1);
             A.finalHumanIteration = false;
-            A.finalBCIIeration = false;
+            A.finalBCIIteration = false;
             A.finalCVIteration = false;
         end
         
@@ -114,57 +116,56 @@ classdef SerialWithBCI < Assignment
         % trigger distinct calls to handleAssignment through different
         % events.
             fprintf('Results received from %s.\n',src.type);
-            switch src.type
-                case 'human' | 'prototype_human'
-                    obj.humanAssignment = obj.humanAssignment + 1;
-                    obj.control.results(obj.humanIndex,...
-                        obj.humanAssignmentTracker==obj.humanAssignment)...
-                        = readResults(src)';
-                    if obj.humanAssignment == obj.humanAssignmentMax
-                        if obj.finalIteration
-                            notify(obj.control,'experimentComplete');
-                        end
+            if strcmp(src.type,'bci') || strcmp(src.type,'prototype_bci')
+                results = readResults(src)';
+                obj.control.results(obj.bciIndex,...
+                    obj.assignmentMatrix(obj.bciIndex,:)) = results;
+                newAssignment = getAssignment(obj,'human',results);
+                if any(newAssignment)
+                    obj.humanAssignmentMax = obj.humanAssignmentMax + 1;
+                    obj.humanAssignmentTracker(newAssignment)...
+                        = obj.humanAssignmentMax;
+                    obj.assignmentMatrix(obj.humanIndex,:) = false;
+                    obj.assignmentMatrix(obj.humanIndex,:) = ...
+                        obj.humanAssignmentTracker == obj.humanAssignmentMax;
+                    assignImages(obj,obj.humanIndex);
+                    if obj.finalBCIIteration
+                        obj.finalHumanIteration = true;
                     end
-                case 'bci' | 'prototype_bci'
-                    results = readResults(src)';
-                    obj.control.results(obj.cvIndex,...
-                        obj.assignmentMatrix(obj.cvIndex,:)) = results;
-                    newAssignment = getHumanAssignment(obj,'bci',results);
-                    if any(newAssignment)
-                        obj.humanAssignmentMax = obj.humanAssignmentMax + 1;
-                        obj.humanAssignmentTracker(newAssignment)...
-                            = obj.humanAssignmentMax;
-                        obj.assignmentMatrix(obj.humanIndex,:) = false;
-                        obj.assignmentMatrix(obj.humanIndex,:) = ...
-                            obj.humanAssignmentTracker == obj.humanAssignmentMax;
-                        assignImages(obj,obj.humanIndex);
-                        if obj.finalCVIteration
-                            obj.finalIteration = true;
-                        end
-                    elseif obj.finalCVIteration
+                elseif obj.finalBCIIteration
+                    notify(obj.control,'experimentComplete');
+                end
+                notify(obj,'iterationComplete');
+            elseif strcmp(src.type,'human') || strcmp(src.type,'prototype_human')
+                obj.humanAssignment = obj.humanAssignment + 1;
+                obj.control.results(obj.humanIndex,...
+                    obj.humanAssignmentTracker==obj.humanAssignment)...
+                    = readResults(src)';
+                if obj.humanAssignment == obj.humanAssignmentMax
+                    if obj.finalHumanIteration
                         notify(obj.control,'experimentComplete');
                     end
-                    notify(obj,'iterationComplete');
-                case 'cv' | 'prototype_cv'
-                    results = readResults(src)';
-                    obj.control.results(obj.cvIndex,...
-                        obj.assignmentMatrix(obj.cvIndex,:)) = results;
-                    newAssignment = getHumanAssignment(obj,'cv',results);
-                    if any(newAssignment)
-                        obj.humanAssignmentMax = obj.humanAssignmentMax + 1;
-                        obj.humanAssignmentTracker(newAssignment)...
-                            = obj.humanAssignmentMax;
-                        obj.assignmentMatrix(obj.humanIndex,:) = false;
-                        obj.assignmentMatrix(obj.humanIndex,:) = ...
-                            obj.humanAssignmentTracker == obj.humanAssignmentMax;
-                        assignImages(obj,obj.humanIndex);
-                        if obj.finalCVIteration
-                            obj.finalIteration = true;
-                        end
-                    elseif obj.finalCVIteration
-                        notify(obj.control,'experimentComplete');
+                end
+            elseif strcmp(src.type,'cv') || strcmp(src.type,'prototype_cv')
+                results = readResults(src)';
+                obj.control.results(obj.cvIndex,...
+                    obj.assignmentMatrix(obj.cvIndex,:)) = results;
+                newAssignment = getAssignment(obj,'bci',results);
+                if any(newAssignment)
+                    obj.bciAssignmentMax = obj.bciAssignmentMax + 1;
+                    obj.bciAssignmentTracker(newAssignment)...
+                        = obj.bciAssignmentMax;
+                    obj.assignmentMatrix(obj.bciIndex,:) = false;
+                    obj.assignmentMatrix(obj.bciIndex,:) = ...
+                        obj.bciAssignmentTracker == obj.bciAssignmentMax;
+                    assignImages(obj,obj.bciIndex);
+                    if obj.finalCVIteration
+                        obj.finalBCIIteration = true;
                     end
-                    notify(obj,'iterationComplete');
+                elseif obj.finalCVIteration
+                    notify(obj.control,'experimentComplete');
+                end
+                notify(obj,'iterationComplete');
             end
         end
         function terminate(obj)
@@ -176,20 +177,22 @@ classdef SerialWithBCI < Assignment
         %------------------------------------------------------------------
         % Dependencies:
         
-        function tasks = getAssignment(obj,src,results)
+        function tasks = getAssignment(obj,forAgent,results)
         % GETHUMANASSIGNMENT assigns a subset of images to the BCI or human
         % agent according to the CV or human results and policy.
-            if strcmp(src,'cv') || strcmp(src,'prototype_cv')
-                tempPolicy = obj.policy_bci;
-                tempIndex = obj.cvIndex;
-            else
-                tempPolicy = obj.policy_human;
-                tempIndex = obj.bciIndex;
-            end
             temp = false(size(results));
-            temp(results==-1) = rand(size(temp(results==-1))) < tempPolicy(1);
-            temp(results==1) = rand(size(temp(results==1))) < tempPolicy(2);
-            tasks = obj.assignmentMatrix(tempIndex,:);
+            if strcmp(forAgent,'bci') || strcmp(forAgent,'prototype_bci')
+                targetPolicy = obj.policy_bci;
+            else
+                targetPolicy = obj.policy_human;
+            end
+            temp(results==-1) = rand(size(temp(results==-1))) < targetPolicy(1);
+            temp(results==1) = rand(size(temp(results==1))) < targetPolicy(2);
+            if strcmp(forAgent,'bci') || strcmp(forAgent,'prototype_bci')
+                tasks = obj.assignmentMatrix(obj.cvIndex,:);
+            else
+                tasks = obj.bciAssignmentTracker == obj.bciAssignmentMax;
+            end
             tasks(tasks) = temp;
         end
         
