@@ -115,7 +115,7 @@ classdef SerialWithBCI < Assignment
         % events.
             fprintf('Results received from %s.\n',src.type);
             switch src.type
-                case 'human'
+                case 'human' | 'prototype_human'
                     obj.humanAssignment = obj.humanAssignment + 1;
                     obj.control.results(obj.humanIndex,...
                         obj.humanAssignmentTracker==obj.humanAssignment)...
@@ -125,7 +125,7 @@ classdef SerialWithBCI < Assignment
                             notify(obj.control,'experimentComplete');
                         end
                     end
-                case 'bci'
+                case 'bci' | 'prototype_bci'
                     results = readResults(src)';
                     obj.control.results(obj.cvIndex,...
                         obj.assignmentMatrix(obj.cvIndex,:)) = results;
@@ -145,7 +145,7 @@ classdef SerialWithBCI < Assignment
                         notify(obj.control,'experimentComplete');
                     end
                     notify(obj,'iterationComplete');
-                case 'cv'
+                case 'cv' | 'prototype_cv'
                     results = readResults(src)';
                     obj.control.results(obj.cvIndex,...
                         obj.assignmentMatrix(obj.cvIndex,:)) = results;
@@ -179,7 +179,7 @@ classdef SerialWithBCI < Assignment
         function tasks = getAssignment(obj,src,results)
         % GETHUMANASSIGNMENT assigns a subset of images to the BCI or human
         % agent according to the CV or human results and policy.
-            if strcmp(src,'cv')
+            if strcmp(src,'cv') || strcmp(src,'prototype_cv')
                 tempPolicy = obj.policy_bci;
                 tempIndex = obj.cvIndex;
             else
