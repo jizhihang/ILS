@@ -64,6 +64,9 @@ classdef Experiment < handle
         % STOPSCANFORAGENTS closes the direct communication socket to
         % experiment.
             fclose(obj.socket);
+            for i = 1:length(obj.control.agents)
+                fwrite(obj.control.agents{i}.socket,'test');
+            end
         end
         
         function endExperiment(obj,src,event)
