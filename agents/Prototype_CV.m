@@ -36,6 +36,8 @@ classdef Prototype_CV < RemoteAgent
             X = fread(obj.socket);
             if strcmp(char(X)','complete')
                 terminate(obj);
+            elseif strcmp(char(X)','test')
+                return
             else
                 Y = zeros(length(X),1);
                 Y(rand(length(X),1)<obj.accuracy) = 1;

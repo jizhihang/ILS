@@ -42,6 +42,8 @@ classdef Human < RemoteAgent
                 terminate(obj);
                 close(obj.gui);
                 delete(obj.iterationListener);
+            elseif strcmp(char(X)','test')
+                return
             else
                 images = getImages(obj,X); % gets images from directory
                 if isempty(obj.gui)

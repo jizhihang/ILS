@@ -46,6 +46,8 @@ classdef ComputerVision < RemoteAgent
             X = fread(obj.socket);
             if strcmp(char(X)','complete')
                 terminate(obj);
+            elseif strcmp(char(X)','test')
+                return
             else
                 Y = zeros(length(X),1);
                 images = getImages(obj,X); % gets images from directory
