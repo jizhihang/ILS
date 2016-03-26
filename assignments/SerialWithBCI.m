@@ -135,7 +135,6 @@ classdef SerialWithBCI < Assignment
                 elseif obj.finalBCIIteration
                     notify(obj.control,'experimentComplete');
                 end
-                notify(obj,'iterationComplete');
             elseif strcmp(src.type,'human') || strcmp(src.type,'prototype_human')
                 obj.humanAssignment = obj.humanAssignment + 1;
                 obj.control.results(obj.humanIndex,...
