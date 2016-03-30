@@ -46,7 +46,7 @@ classdef Prototype_CV < RemoteAgent
             else
                 n = length(X);
                 Y = zeros(n,1);
-                Y(rand(n,1)<obj.accuracy) = 1
+                Y(rand(n,1)<obj.accuracy) = 1;
                 pause(n*obj.delay);
                 fwrite(obj.socket,Y(:));
                 fprintf('Prototype_CV completed classification of %u images.\n',...

@@ -96,6 +96,8 @@ classdef Experiment < handle
                     obj.elapsedTime(obj.testCounter) = toc;
                     obj.balAcc(obj.testCounter) = balancedAccuracy(...
                         obj.control.labels,obj.labels);
+                    [obj.testCounter,obj.elapsedTime(obj.testCounter),...
+                        obj.balAcc(obj.testCounter)]
                 end
             end
             resetAssignment(obj.control.assignment);
