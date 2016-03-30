@@ -138,6 +138,18 @@ classdef Serial < Assignment
             delete(obj.iterationListener);
             terminate@Assignment(obj);
         end
+        function resetAssignment(obj)
+        % RESETASSIGNMENT will return assignment to initial state for a
+        % follow-on experiment
+            obj.agentIndex(:) = false;
+            obj.iterationStatus(:) = false;
+            obj.assignmentMatrix(:) = false;
+            obj.humanAssignment = 0;
+            obj.humanAssignmentMax = 0;
+            obj.humanAssignmentTracker(:) = 0;
+            obj.finalIteration = false;
+            obj.finalCVIteration = false;
+        end
         
         %------------------------------------------------------------------
         % Dependencies:

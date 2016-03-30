@@ -172,6 +172,22 @@ classdef SerialWithBCI < Assignment
             delete(obj.iterationListener);
             terminate@Assignment(obj);
         end
+        function resetAssignment(obj)
+        % RESETASSIGNMENT will return assignment to initial state for a
+        % follow-on experiment
+            obj.agentIndex(:) = false;
+            obj.iterationStatus(:) = false;
+            obj.assignmentMatrix(:) = false;
+            obj.humanAssignment = 0;
+            obj.humanAssignmentMax = 0;
+            obj.humanAssignmentTracker(:) = 0;
+            obj.bciAssignment = 0;
+            obj.bciAssignmentMax = 0;
+            obj.bciAssignmentTracker(:) = 0;
+            obj.finalHumanIteration = false;
+            obj.finalBCIIteration = false;
+            obj.finalCVIteration = false;
+        end
         
         %------------------------------------------------------------------
         % Dependencies:

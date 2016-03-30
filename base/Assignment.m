@@ -79,6 +79,9 @@ classdef (Abstract) Assignment < handle
         handleResults(obj,src,event)
         % HANDLERESULTS must also check for iteration completion and call
         % handleassignemnt
+        resetAssignment(obj)
+        % RESETASSIGNMENT will return assignment to initial state for a
+        % follow-on experiment
         
         %------------------------------------------------------------------
     end

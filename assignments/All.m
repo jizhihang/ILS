@@ -60,6 +60,14 @@ classdef All < Assignment
             delete(obj.iterationListener);
             terminate@Assignment(obj);
         end
+        function resetAssignment(obj)
+        % RESETASSIGNMENT will return assignment to initial state for a
+        % follow-on experiment
+            obj.agentIndex(:) = false;
+            obj.iterationStatus(:) = false;
+            obj.assignmentMatrix(:) = false;
+        end
+        
         %------------------------------------------------------------------
     end
     

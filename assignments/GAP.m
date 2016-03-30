@@ -112,7 +112,18 @@ classdef GAP < Assignment
             delete(obj.iterationListener);
             terminate@Assignment(obj);
         end
-        
+        function resetAssignment(obj)
+        % RESETASSIGNMENT will return assignment to initial state for a
+        % follow-on experiment
+            obj.agentIndex(:) = false;
+            obj.iterationStatus(:) = false;
+            obj.assignmentMatrix(:) = false;
+            obj.value(:) = 1;
+            obj.agentReliability(:) = 0;
+            obj.imageConfidence(:) = 0;
+            obj.imageCompletion(:) = false;
+        end
+                
         %------------------------------------------------------------------
         % Dependencies:
         

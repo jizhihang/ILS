@@ -13,6 +13,7 @@ classdef Experiment < handle
         elapsedTime % Elapsed time of experiment
         balAcc % Results of experiment
         numImages % Number of images in database
+        testCounter % Counter for automated tests
     end
     
     properties (Access = private)
@@ -42,6 +43,7 @@ classdef Experiment < handle
             E.numImages = length(X);
             E.elapsedTime = 0;
             E.balAcc = 0;
+            E.testCounter = 0;
             if nargin > 1
                 E.labels = Y(:);
                 if nargin == 3
@@ -75,17 +77,37 @@ classdef Experiment < handle
             end
         end
         
-        function autoStart(obj)
+        function autoRun(obj,iterations)
         % AUTOSTART provides a command line call to start the experiment.
-            notify(obj.control,'beginExperiment');
+            persistent endCount
+            if nargin == 2
+                endCount = iterations;
+                obj.elapsedTime = zeros(iterations,1);
+                obj.balAcc = zeros(iterations,1);
+                delete(obj.listener);
+                obj.listener = addlistener(obj.control,...
+                    'experimentComplete',@obj.autoRun);
+            else
+                obj.testCounter = obj.testCounter + 1;
+                if obj.testCounter == endCount
+                    endExperiment(obj);
+                    return
+                else
+                    obj.elapsedTime(obj.testCounter) = toc;
+                    obj.balAcc(obj.testCounter) = balancedAccuracy(...
+                        obj.control.labels,obj.labels);
+                end
+            end
+            resetAssignment(obj.control.assignment);
             tic;
+            notify(obj.control,'beginExperiment');
         end
         
         function endExperiment(obj,src,event)
         % ENDEXPERIMENT will end the experiment, shutting down all direct
         % interface connections. It will be initiated by a button on the
         % experimenter interface.
-            obj.elapsedTime = toc;
+            obj.elapsedTime(end) = toc;
             terminate(obj.control);
             delete(obj.listener);
             try
@@ -100,7 +122,8 @@ classdef Experiment < handle
             end
             fprintf('Experiment complete.\n')
             if ~isempty(obj.labels)
-                obj.balAcc = balancedAccuracy(obj.control.labels,obj.labels);
+                obj.balAcc(end) = balancedAccuracy(obj.control.labels,...
+                    obj.labels);
                 fprintf('System achieved %.3f balanced accuracy on %u images in %u seconds.\n',...
                     obj.balAcc,obj.numImages,obj.elapsedTime);
             else
