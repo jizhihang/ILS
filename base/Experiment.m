@@ -77,13 +77,13 @@ classdef Experiment < handle
             end
         end
         
-        function autoRun(obj,iterations)
+        function autoRun(obj,varargin)
         % AUTOSTART provides a command line call to start the experiment.
             persistent endCount
-            if nargin == 2
-                endCount = iterations;
-                obj.elapsedTime = zeros(iterations,1);
-                obj.balAcc = zeros(iterations,1);
+            if nargin < 3
+                endCount = varargin{1};
+                obj.elapsedTime = zeros(endCount,1);
+                obj.balAcc = zeros(endCount,1);
                 delete(obj.listener);
                 obj.listener = addlistener(obj.control,...
                     'experimentComplete',@obj.autoRun);
@@ -125,7 +125,7 @@ classdef Experiment < handle
                 obj.balAcc(end) = balancedAccuracy(obj.control.labels,...
                     obj.labels);
                 fprintf('System achieved %.3f balanced accuracy on %u images in %u seconds.\n',...
-                    obj.balAcc,obj.numImages,obj.elapsedTime);
+                    obj.balAcc(end),obj.numImages,obj.elapsedTime(end));
             else
                 fprintf('System classified %u images in %u seconds.\n',...
                     obj.numImages,obj.elapsedTime);

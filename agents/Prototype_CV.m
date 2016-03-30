@@ -12,7 +12,7 @@ classdef Prototype_CV < RemoteAgent
         % -----------------------------------------------------------------
         % Class constructor:
         
-        function A = Prototype_CV(remotePort,agentAccuracy)
+        function A = Prototype_CV(remotePort,agentAccuracy,seed)
             if nargin < 1
                 error('Too few parameters for class construction.');
             end
@@ -22,6 +22,11 @@ classdef Prototype_CV < RemoteAgent
                 A.accuracy = agentAccuracy;
             else
                 A.accuracy = rand;
+            end
+            if nargin == 3
+                range(seed);
+            else
+                range('shuffle');
             end
         end
         
@@ -41,7 +46,7 @@ classdef Prototype_CV < RemoteAgent
             else
                 n = length(X);
                 Y = zeros(n,1);
-                Y(rand(n,1)<obj.accuracy) = 1;
+                Y(rand(n,1)<obj.accuracy) = 1
                 pause(n*obj.delay);
                 fwrite(obj.socket,Y(:));
                 fprintf('Prototype_CV completed classification of %u images.\n',...

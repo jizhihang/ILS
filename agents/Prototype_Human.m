@@ -12,7 +12,7 @@ classdef Prototype_Human < RemoteAgent
         % -----------------------------------------------------------------
         % Class constructor:
         
-        function A = Prototype_Human(remotePort,agentAccuracy)
+        function A = Prototype_Human(remotePort,agentAccuracy,seed)
             if nargin < 1
                 error('Too few parameters for class construction.');
             end
@@ -22,6 +22,11 @@ classdef Prototype_Human < RemoteAgent
                 A.accuracy = agentAccuracy;
             else
                 A.accuracy = rand;
+            end
+            if nargin == 3
+                range(seed);
+            else
+                range('shuffle');
             end
         end
         
