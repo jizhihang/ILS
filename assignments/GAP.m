@@ -43,11 +43,9 @@ classdef GAP < Assignment
             for i = 1:length(A.cost)
                 switch control.agents{i}.type
                     case 'cv'
-                        A.cost(i) = 0.01;
+                        A.cost(i) = 1e-2;
                     case 'human'
                         A.cost(i) = 1;
-                    case 'prototype'
-                        A.cost(i) = rand;
                     case 'prototype_cv'
                         A.cost(i) = 1e-2;
                     case 'prototype_bci'
@@ -80,7 +78,9 @@ classdef GAP < Assignment
                         return
                     end
                 case 'beginExperiment'
-                    obj.assignmentMatrix(:,1:min(50,size(obj.assignmentMatrix,2))) = true;
+                    numAgents = length(obj.control.agents);
+                    init_assignment = numAgents*(numAgents+1);
+                    obj.assignmentMatrix(:,1:min(init_assignment,size(obj.assignmentMatrix,2))) = true;
             end
             for i = 1:length(obj.agentIndex)
                 if ~any(obj.assignmentMatrix(i,:))
@@ -141,13 +141,15 @@ classdef GAP < Assignment
                 obj.value(:,~obj.imageCompletion),...
                 repmat(obj.cost,1,length(find(~obj.imageCompletion))),...
                 obj.budget);
-            intcon = 1:length(v);
-            lb = zeros(length(v),1);
-            ub = ones(length(v),1);
-            options = optimoptions('intlinprog','Display','none',...
-                'CutGeneration','basic');
-            tempAssign = intlinprog(-v,intcon,Aineq,bineq,Aeq,beq,...
-                lb,ub,options);
+            tempAssign = branchAndBound(v,1e2*Aineq,1e2*bineq,Aeq,beq,...
+                'greedy');
+%             intcon = 1:length(v);
+%             lb = zeros(length(v),1);
+%             ub = ones(length(v),1);
+%             options = optimoptions('intlinprog','Display','none',...
+%                 'CutGeneration','basic');
+%             tempAssign = intlinprog(-v,intcon,Aineq,bineq,Aeq,beq,...
+%                 lb,ub,options);
             try
                 obj.assignmentMatrix(:,~obj.imageCompletion) = ...
                     reshape(tempAssign,length(obj.budget),[])==1;

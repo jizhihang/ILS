@@ -86,8 +86,8 @@ else
         % u(k+1) := u(k) + t*(Aeq*x-beq). Iterate until step size is less
         % than tolerance.
         case 'subgradient'
-            tol = 1e-6; % Tolerance for sub-gradient method
-            t = 1; % Initial step size for descent algorithm
+            tol = 1e-3; % Tolerance for sub-gradient method
+            t = 2; % Initial step size (reciprocal) for descent algorithm
             Zdu = 0;
             while flag
                 % Solve knapsack problem
@@ -109,12 +109,15 @@ else
                 % Calculate sub-gradient and update multiplier; terminate
                 % if gradient is sufficiently close to zero
                 g = (Aeq*x-beq);
-                if norm(g) < tol
+                if t == 2
+                    g0 = norm(g);
+                end
+                if norm(g) < tol*g0
                     flag = false;
                     continue;
                 else
-                    u = u + t*g/norm(g);
-                    t = t*0.9;
+                    u = u + g/(t*norm(g));
+                    t = t+1;
                 end
                 
             end

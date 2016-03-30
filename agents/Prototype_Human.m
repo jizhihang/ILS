@@ -39,12 +39,13 @@ classdef Prototype_Human < RemoteAgent
             elseif strcmp(char(X)','test')
                 return
             else
-                Y = zeros(length(X),1);
-                Y(rand(length(X),1)<obj.accuracy) = 1;
-                pause(obj.delay);
+                n = length(X);
+                Y = zeros(n,1);
+                Y(rand(n,1)<obj.accuracy) = 1;
+                pause(n*obj.delay);
                 fwrite(obj.socket,Y(:));
                 fprintf('Prototype_Human completed classification of %u images.\n',...
-                    length(X))
+                    n)
             end
         end
         

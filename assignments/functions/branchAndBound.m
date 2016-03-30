@@ -128,8 +128,8 @@ end
 % solution, then return. Else continue with multiplier adjustment method.
 if strcmp(method,'greedy') && ~isempty(X)
     return;
-else
-    method = 'multiplierAdjustment';
+% else
+%     method = 'multiplierAdjustment';
 end
 
 % Initialize branch and bound algorithm. Live is a cell array where each

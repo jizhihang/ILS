@@ -10,6 +10,9 @@ classdef Experiment < handle
         localPort % Permanent port of local control
         socket % Direct interface socket of local control
         listener % Listens for end of experiment notification
+        elapsedTime % Elapsed time of experiment
+        balAcc % Results of experiment
+        numImages % Number of images in database
     end
     
     properties (Access = private)
@@ -36,6 +39,9 @@ classdef Experiment < handle
             E.listener = addlistener(E.control,'experimentComplete',...
                 @E.endExperiment);
             addData(E.control,X);
+            E.numImages = length(X);
+            E.elapsedTime = 0;
+            E.balAcc = 0;
             if nargin > 1
                 E.labels = Y(:);
                 if nargin == 3
@@ -69,10 +75,17 @@ classdef Experiment < handle
             end
         end
         
+        function autoStart(obj)
+        % AUTOSTART provides a command line call to start the experiment.
+            notify(obj.control,'beginExperiment');
+            tic;
+        end
+        
         function endExperiment(obj,src,event)
         % ENDEXPERIMENT will end the experiment, shutting down all direct
         % interface connections. It will be initiated by a button on the
         % experimenter interface.
+            obj.elapsedTime = toc;
             terminate(obj.control);
             delete(obj.listener);
             try
@@ -87,11 +100,12 @@ classdef Experiment < handle
             end
             fprintf('Experiment complete.\n')
             if ~isempty(obj.labels)
-                try
-                    fprintf('Balanced accuracy: %.3f\n',...
-                        balancedAccuracy(obj.control.labels,obj.labels));
-                catch
-                end
+                obj.balAcc = balancedAccuracy(obj.control.labels,obj.labels);
+                fprintf('System achieved %.3f balanced accuracy on %u images in %u seconds.\n',...
+                    obj.balAcc,obj.numImages,obj.elapsedTime);
+            else
+                fprintf('System classified %u images in %u seconds.\n',...
+                    obj.numImages,obj.elapsedTime);
             end
         end
         
