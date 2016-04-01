@@ -1,4 +1,4 @@
-function [PI,MLE] = sml(X)
+function [YMLE,MLE,PI] = sml(X)
 %
 % Spectral Meta-Learner
 %
@@ -14,27 +14,39 @@ function [PI,MLE] = sml(X)
 % (c) 2013 Kluger Lab
 % modified by Addison Bohannon (01 APR 2016)
 
- X = sign(X');
- p0 = sum(X(:)==1)./sum(X(:)~=0);
- X(X==0) = 2.*(rand(sum(X(:)==0),1)>(1-p0)) - 1;
-
- [S,~] = size(X); 
-
- CMAT = cov(X);     %computes the covariance
+ [numAgents,numSamples] = size(X);
+ indX = false(numAgents,1);
+ for i = 1:numAgents
+     indX(i) = length(unique(X(i,:))) > 1;
+ end
+ indY = true(numSamples,1);
+ for i = 1:numSamples
+     indY(i) = all(unique(X(:,i)~=0));
+ end
+ if length(indY) < length(indX)
+     error('Too few samples for the number of agents.')
+ end
+ Xhat = sign(X(indX,indY)');
+ [S,~] = size(Xhat);
+ CMAT = cov(Xhat);     %computes the covariance
  VMAT = varcov(CMAT,S); %variance  of covariance
         
  %log weighted
- [PI,~] = covadj_weighted(CMAT,VMAT);
+ PI = zeros(numAgents,1);
+ [PI(indX),~] = covadj_weighted(CMAT,VMAT);
  pi_wgs = nanmean(PI);
  if pi_wgs < 0
      PI = -PI;
  end
     
  %spectral-metalearner
- HL = sign(X*PI);
+ MLE = X'*PI;
+ YMLE = sign(MLE);
 
  %iterative MLE
- [PI,MLE] = iMLE(X,HL,PI);
+ [YMLE,MLE,PI] = iMLE(X',YMLE,MLE,PI);
+ YMLE = YMLE';
+ MLE = MLE';
 
 end
 
@@ -101,7 +113,7 @@ function [ R, D, CMAT2 ] = covadj_weighted( CMAT, VMAT )
 
 end
 
-function [pi,YMLE] = iMLE( Y, Y0, pi )
+function [YMLE,MLE,PI] = iMLE( Y, Y0, MLE, PI )
  YBCK = 0.*Y0;
  YMLE = Y0;
  Nsteps = 0;
@@ -115,26 +127,23 @@ function [pi,YMLE] = iMLE( Y, Y0, pi )
  while sum(YBCK~=YMLE)>0 
   Nsteps = Nsteps+1;
   YBCK = YMLE;
+  
   for i=1:M
    psi(i) = sum(YMLE>0 & Y(:,i)>0)./sum(YMLE>0);
    eta(i) = sum(YMLE<0 & Y(:,i)<0)./sum(YMLE<0);
   end
-  
   psi = ((tol.* (2 * psi - 1)) + 1)./2;
   eta = ((tol.* (2 * eta - 1)) + 1)./2;  
-  
   psi(isnan(psi)) = 0.5;
   eta(isnan(eta)) = 0.5; 
+  PI = 0.5*(psi+eta);
   
-  pi = 0.5*(psi+eta);
-  
-  b = mean(YMLE).*tol;
-  YMLE = 0;
+  MLE = 0;
   for i=1:M
-   YMLE = YMLE + ( log( (1-Y(:,i))./2 + Y(:,i).*psi(i) ) - ...
+   MLE = MLE + ( log( (1-Y(:,i))./2 + Y(:,i).*psi(i) ) - ...
                    log( (1+Y(:,i))./2 - Y(:,i).*eta(i) ) );                   
   end
-  YMLE = sign(YMLE);
+  YMLE = sign(MLE);
  end
 
 end

@@ -103,6 +103,7 @@ classdef Experiment < handle
             resetAssignment(obj.control.assignment);
             tic;
             notify(obj.control,'beginExperiment');
+            close(obj.gui);
         end
         
         function endExperiment(obj,src,event)
