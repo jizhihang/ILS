@@ -81,6 +81,7 @@ classdef Experiment < handle
         % AUTOSTART provides a command line call to start the experiment.
             persistent endCount
             if nargin < 3
+                close(obj.gui);
                 endCount = varargin{1};
                 obj.elapsedTime = zeros(endCount,1);
                 obj.balAcc = zeros(endCount,1);
@@ -103,14 +104,17 @@ classdef Experiment < handle
             resetAssignment(obj.control.assignment);
             tic;
             notify(obj.control,'beginExperiment');
-            close(obj.gui);
         end
         
         function endExperiment(obj,src,event)
         % ENDEXPERIMENT will end the experiment, shutting down all direct
         % interface connections. It will be initiated by a button on the
         % experimenter interface.
-            obj.elapsedTime(end) = toc;
+            try
+                obj.elapsedTime(end) = toc;
+            catch
+                warning('Timer not set.');
+            end
             terminate(obj.control);
             delete(obj.listener);
             try
