@@ -6,13 +6,14 @@ classdef Prototype_BCI < RemoteAgent
     properties
         accuracy % Accuracy of prototype agent
         delay % Delay of prototype agent
+        trueBehavior % Delay is manifest in agent (boolean)
     end
     
     methods
         % -----------------------------------------------------------------
         % Class constructor:
         
-        function A = Prototype_BCI(remotePort,agentAccuracy,seed)
+        function A = Prototype_BCI(remotePort,agentAccuracy,trueBehavior)
             if nargin < 1
                 error('Too few parameters for class construction.');
             end
@@ -24,9 +25,9 @@ classdef Prototype_BCI < RemoteAgent
                 A.accuracy = rand;
             end
             if nargin == 3
-                range(seed);
+                A.trueBehavior = trueBehavior;
             else
-                range('shuffle');
+                A.trueBehavior = false;
             end
         end
         
@@ -47,7 +48,9 @@ classdef Prototype_BCI < RemoteAgent
                 n = length(X);
                 Y = zeros(n,1);
                 Y(rand(n,1)<obj.accuracy) = 1;
-                pause(n*obj.delay);
+                if obj.trueBehavior
+                    pause(n*obj.delay);
+                end
                 fwrite(obj.socket,Y(:));
                 fprintf('Prototype_BCI completed classification of %u images.\n',...
                     n)
@@ -55,7 +58,6 @@ classdef Prototype_BCI < RemoteAgent
         end
         
         %------------------------------------------------------------------
-        
     end
     
 end

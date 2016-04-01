@@ -1,70 +1,141 @@
-function [label,score,pi] = sml(X)
-% SML takes a matrix of binary classification labels (number of agents by
-% number of samples) and uses the spectral meta-learner with
-% expectation-maximization to generate a maximum likelihood estimate of the
-% true class labels. The EM algorithm terminates when a sufficiently small
-% fraction of the labels change between iterations.
+function [PI,MLE] = sml(X)
+%
+% Spectral Meta-Learner
+%
+% Input:
+%   X: a N*S data matrix of N predictors by S instances
+%      entries in X are assumed to be +1 or -1
+%      (will be converted if real).
+%
+% Output:
+%   PI: balanced accuracy of classifiers
+%   MLE: iterative maximum likelihood estimate (starting from HL)
+% 
+% (c) 2013 Kluger Lab
+% modified by Addison Bohannon (01 APR 2016)
 
-    % Spectral Meta-learner
-    [numAgents,numSamples] = size(X);
-    indX = false(numAgents,1);
-    for i = 1:numAgents
-        indX(i) = length(unique(X(i,:))) > 1;
-    end
-    indY = true(numSamples,1);
-    for i = 1:numSamples
-        indY(i) = all(unique(X(:,i)~=0));
-    end
-    if length(indY) < length(indX)
-        error('Too few samples for the number of agents.')
-    end
-    Xhat = X(indX,indY);
-    Q = cov(Xhat');
-    [V,~] = eig(Q);
-    pi = V(:,1);
-    score = pi'*X(indX,:);
-    label = sign(score);
-    pi = abs(pi);
-    if length(find(unique(label)~=0)) < 2
-        return
-    end
+ X = sign(X');
+ p0 = sum(X(:)==1)./sum(X(:)~=0);
+ X(X==0) = 2.*(rand(sum(X(:)==0),1)>(1-p0)) - 1;
+
+ [S,~] = size(X); 
+
+ CMAT = cov(X);     %computes the covariance
+ VMAT = varcov(CMAT,S); %variance  of covariance
+        
+ %log weighted
+ [PI,~] = covadj_weighted(CMAT,VMAT);
+ pi_wgs = nanmean(PI);
+ if pi_wgs < 0
+     PI = -PI;
+ end
     
-    % Expectation-Maximization
-    e = 0.05;
-    k = 0;
-    flag = true;
-    Yhat = label;
-    while flag
-        psi = zeros(numAgents,1);
-        for i = 1:numAgents
-            psi(i) = numel(intersect(find(X(i,:)==1),find(Yhat==1)))/...
-                length(find(Yhat~=0));
-        end
-        eta = zeros(numAgents,1);
-        for i = 1:numAgents
-            eta(i) = numel(intersect(find(X(i,:)==-1),find(Yhat==-1)))/...
-                length(find(Yhat~=0));
-        end
-        alpha = (psi.*eta)./((1-psi).*(1-eta));
-        beta = (psi.*(1-psi))./(eta.*(1-eta));
-        tempScore = log(alpha)'*X;
-        tempScore(indY) = tempScore(indY) + sum(log(beta));
-        tempLabel = sign(tempScore);
-        k = k+1;
-        if ~all(isfinite(tempScore))
-            flag = false;
-        elseif norm(label-Yhat,1) < 2*e*numSamples || k > 50
-            flag = false;
-            pi = abs((psi+eta)/2);
-            score = tempScore;
-            label = tempLabel;
-        else
-            Yhat = label;
-            pi = abs((psi+eta)/2);
-            score = tempScore;
-            label = tempLabel;
-        end
+ %spectral-metalearner
+ HL = sign(X*PI);
+
+ %iterative MLE
+ [PI,MLE] = iMLE(X,HL,PI);
+
+end
+
+function [ VMAT ] = varcov( CMAT, S )
+% for each element in the covariance matrix
+%  returns the variance of the mean estimator
+% S: datapoints
+
+M = size(CMAT,1);  %algorithms
+VMAT = zeros(M);
+for i=1:(M-1)
+    VMAT(i,i) = 2.*(CMAT(i,i).^2);
+    for j=(i+1):M
+        VMAT(i,j) = (CMAT(i,i).*CMAT(j,j) + CMAT(i,j).^2)./S;
+        VMAT(j,i) = VMAT(i,j);
     end
+end
+
+end
+
+function [ R, D, CMAT2 ] = covadj_weighted( CMAT, VMAT )
+% thresholded covariance adjustment 
+% returns eigenvectors V, eigenvalues D and the adjusted matrix CMAT2
+% weights at VMAT
+
+ M  = size(CMAT,1);
+ M2 = M.*M; 
+ 
+ CVEC = log(abs(CMAT(:)));
+ 
+ isel = abs(CMAT(:))>0;  %indices of the elements to be used
+ 
+ y = zeros(M2,1);
+ x = zeros(M2,M);
+ f = zeros(M2,1);
+ for i=1:(M-1)
+     for j=(i+1):M
+         k=i + (j-1).*M;
+         if isel(k)==1
+             y(k) = CVEC(k);
+             x(k,i)=1;
+             x(k,j)=1;
+             f(k) = (CMAT(i,j).^2)./VMAT(i,j);
+         end
+     end
+ end
+ 
+ y = y(f>0);
+ x = x(f>0,:);
+ f = f(f>0);
+ 
+ %plot(y)
+ b = ones(M,1)*(-Inf);
+ i = sum(x)>0;
+ b(i) = lscov(x(:,i),y,f);
+ 
+ CMAT2 = CMAT;
+ 
+ for i=1:M
+     CMAT2(i,i) = exp(2*b(i));
+ end
+ 
+ [R,D] = eigs(CMAT2,1);
+
+end
+
+function [pi,YMLE] = iMLE( Y, Y0, pi )
+ YBCK = 0.*Y0;
+ YMLE = Y0;
+ Nsteps = 0;
+
+ [S, M] = size(Y);
+ tol = 1 - 1./(S.^2);
+ 
+ psi = zeros(M,1);
+ eta = zeros(M,1);
+  
+ while sum(YBCK~=YMLE)>0 
+  Nsteps = Nsteps+1;
+  YBCK = YMLE;
+  for i=1:M
+   psi(i) = sum(YMLE>0 & Y(:,i)>0)./sum(YMLE>0);
+   eta(i) = sum(YMLE<0 & Y(:,i)<0)./sum(YMLE<0);
+  end
+  
+  psi = ((tol.* (2 * psi - 1)) + 1)./2;
+  eta = ((tol.* (2 * eta - 1)) + 1)./2;  
+  
+  psi(isnan(psi)) = 0.5;
+  eta(isnan(eta)) = 0.5; 
+  
+  pi = 0.5*(psi+eta);
+  
+  b = mean(YMLE).*tol;
+  YMLE = 0;
+  for i=1:M
+   YMLE = YMLE + ( log( (1-Y(:,i))./2 + Y(:,i).*psi(i) ) - ...
+                   log( (1+Y(:,i))./2 - Y(:,i).*eta(i) ) );                   
+  end
+  YMLE = sign(YMLE);
+ end
 
 end
 

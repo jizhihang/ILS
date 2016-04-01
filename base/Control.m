@@ -119,7 +119,9 @@ classdef Control < handle
                         y = sml(obj.results);
                     catch
                         warning('Something was wrong with SML. Using mv.');
-                        y = mode(obj.results,2);
+                        temp = obj.results;
+                        temp(obj.results==0) = NaN;
+                        y = mode(temp,1);
                     end
                 case 'sum'
                     temp = obj.results;
