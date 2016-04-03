@@ -130,20 +130,22 @@ classdef GAP < Assignment
         % GETASSIGNMENT uses the GAP formulation to generate a new
         % assignmentMatrix.
             [~,score,obj.agentReliability] = sml(obj.control.results);
-            obj.imageConfidence = abs(score);
-            obj.imageCompletion(obj.imageConfidence>=obj.threshold) = true;
+            obj.imageConfidence(~obj.imageCompletion) = abs(score(~obj.imageCompletion));
+            temp = obj.imageCompletion(~obj.imageCompletion);
+            temp(obj.imageConfidence(~obj.imageCompletion)>=obj.threshold) = true;
+            obj.imageCompletion(~obj.imageCompletion) = temp;
             if all(obj.imageCompletion)
                 obj.assignmentMatrix(:) = false;
                 return
             end
-            temp = 1 + repmat(obj.agentReliability,1,size(obj.value,2))...
-                - repmat(obj.imageConfidence,size(obj.value,1),1);
+            temp = max(obj.imageConfidence) + repmat(obj.agentReliability,1,size(obj.value,2))...
+                - repmat(obj.imageConfidence',size(obj.value,1),1);
             temp(temp<0) = 0;
             temp(obj.assignmentMatrix) = 0;
             obj.assignmentMatrix(:) = false;
             temp(obj.value==0) = 0;
             obj.value = temp;
-            if all(obj.value==0)
+            if all(obj.value(:,~obj.imageCompletion)==0)
                 notify(obj.control,'experimentComplete');
                 return
             end

@@ -16,13 +16,13 @@ function [YMLE,MLE,PI] = sml(X)
 
  [numAgents,~] = size(X);
  indexSamples = all(X~=0,1);
- if length(indexSamples) < numAgents
+ numSamples = length(indexSamples);
+ if numSamples < numAgents
      error('Too few samples for the number of agents.')
  end
  Xhat = sign(X(:,indexSamples)');
- [S,~] = size(Xhat);
  CMAT = cov(Xhat);     %computes the covariance
- VMAT = varcov(CMAT,S); %variance  of covariance
+ VMAT = varcov(CMAT,numSamples); %variance  of covariance
         
  %log weighted
  [PI,~] = covadj_weighted(CMAT,VMAT);
@@ -32,13 +32,13 @@ function [YMLE,MLE,PI] = sml(X)
  end
     
  %spectral-metalearner
- MLE = X'*PI;
+ MLE = Xhat*PI;
  YMLE = sign(MLE);
 
  %iterative MLE
- [YMLE,MLE,PI] = iMLE(X',YMLE,MLE,PI);
- YMLE = YMLE';
- MLE = MLE';
+ [~,PI] = iMLE(Xhat,YMLE);
+ MLE = X'*PI;
+ YMLE = sign(MLE);
 
 end
 
@@ -105,7 +105,7 @@ function [ R, D, CMAT2 ] = covadj_weighted( CMAT, VMAT )
 
 end
 
-function [YMLE,MLE,PI] = iMLE( Y, Y0, MLE, PI )
+function [YMLE,PI] = iMLE( Y, Y0 )
  YBCK = 0.*Y0;
  YMLE = Y0;
  Nsteps = 0;
