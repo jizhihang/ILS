@@ -44,11 +44,11 @@ classdef SerialWithBCI < Assignment
             A.policy_human = policy_human;
             A.policy_bci = policy_bci;
             for i = 1:length(control.agents)
-                if strcmp(control.agents{i}.type,'cv') || strcmp(control.agents{i}.type,'prototype_cv')
+                if strcmp(control.agents{i}.type,'cv')
                     A.cvIndex = i;
-                elseif strcmp(control.agents{i}.type,'bci') || strcmp(control.agents{i}.type,'prototype_bci')
+                elseif strcmp(control.agents{i}.type,'rsvp')
                     A.bciIndex = i;
-                elseif strcmp(control.agents{i}.type,'human') || strcmp(control.agents{i}.type,'prototype_human')
+                elseif strcmp(control.agents{i}.type,'human')
                     A.humanIndex = i;
                 else
                     error('Only human, BCI, and CV agents can be used in Serial with BCI.')
@@ -116,7 +116,7 @@ classdef SerialWithBCI < Assignment
         % trigger distinct calls to handleAssignment through different
         % events.
             fprintf('Results received from %s.\n',src.type);
-            if strcmp(src.type,'bci') || strcmp(src.type,'prototype_bci')
+            if strcmp(src.type,'rsvp')
                 results = readResults(src)';
                 obj.control.results(obj.bciIndex,...
                     obj.assignmentMatrix(obj.bciIndex,:)) = results;
@@ -135,7 +135,7 @@ classdef SerialWithBCI < Assignment
                 elseif obj.finalBCIIteration
                     notify(obj.control,'experimentComplete');
                 end
-            elseif strcmp(src.type,'human') || strcmp(src.type,'prototype_human')
+            elseif strcmp(src.type,'human')
                 obj.humanAssignment = obj.humanAssignment + 1;
                 obj.control.results(obj.humanIndex,...
                     obj.humanAssignmentTracker==obj.humanAssignment)...
@@ -145,7 +145,7 @@ classdef SerialWithBCI < Assignment
                         notify(obj.control,'experimentComplete');
                     end
                 end
-            elseif strcmp(src.type,'cv') || strcmp(src.type,'prototype_cv')
+            elseif strcmp(src.type,'cv')
                 results = readResults(src)';
                 obj.control.results(obj.cvIndex,...
                     obj.assignmentMatrix(obj.cvIndex,:)) = results;
@@ -196,14 +196,14 @@ classdef SerialWithBCI < Assignment
         % GETHUMANASSIGNMENT assigns a subset of images to the BCI or human
         % agent according to the CV or human results and policy.
             temp = false(size(results));
-            if strcmp(forAgent,'bci') || strcmp(forAgent,'prototype_bci')
+            if strcmp(forAgent,'rsvp')
                 targetPolicy = obj.policy_bci;
             else
                 targetPolicy = obj.policy_human;
             end
             temp(results==-1) = rand(size(temp(results==-1))) < targetPolicy(1);
             temp(results==1) = rand(size(temp(results==1))) < targetPolicy(2);
-            if strcmp(forAgent,'bci') || strcmp(forAgent,'prototype_bci')
+            if strcmp(forAgent,'bci')
                 tasks = obj.assignmentMatrix(obj.cvIndex,:);
             else
                 tasks = obj.bciAssignmentTracker == obj.bciAssignmentMax;

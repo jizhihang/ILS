@@ -44,13 +44,9 @@ classdef GAP < Assignment
                 switch control.agents{i}.type
                     case 'cv'
                         A.cost(i) = 1e-2;
-                    case 'human'
-                        A.cost(i) = 1;
-                    case 'prototype_cv'
-                        A.cost(i) = 1e-2;
-                    case 'prototype_bci'
+                    case 'rsvp'
                         A.cost(i) = 1e-1;
-                    case 'prototype_human'
+                    case 'human'
                         A.cost(i) = 1;
                     otherwise
                         A.cost(i) = inf;

@@ -1,7 +1,7 @@
-classdef Prototype_Human < RemoteAgent
-% PROTOTYPE_Human is a child of the LocalAgent superclass to be used for
+classdef Prototype < RemoteAgent
+% PROTOTYPE is a child of the LocalAgent superclass to be used for
 % system testing and development. It generates an image classification
-% randomly according to a specified accuracy and delay of 1.
+% randomly according to a specified accuracy and delay.
     
     properties
         accuracy % Accuracy of prototype agent
@@ -14,28 +14,38 @@ classdef Prototype_Human < RemoteAgent
         % -----------------------------------------------------------------
         % Class constructor:
         
-        function A = Prototype_Human(remotePort,varargin)
+        function P = Prototype(type,remotePort,varargin)
         % PROTOTYPE_HUMAN is the class constructor of the prototype human
         % child class of remote agent. It takes variable name-value pair
-        % options: H = Prototype_Human(9999, 'accuracy', 0.99,
+        % options: H = Prototype('human',9999, 'accuracy', 0.99,
         % 'trueBehavior', true, 'trueLabels', labels);
-            if nargin < 1
+            if nargin < 2
                 error('Too few parameters for class construction.');
             end
-            A@RemoteAgent('prototype_human',remotePort);
-            A.delay = 1;
-            A.accuracy = rand;
-            A.trueBehavior = false;
-            A.trueLabels = [];
-            if nargin > 1
+            if ~any(strcmp(type,{'human','rsvp','cv'}))
+                error('Not a valid agent type.');
+            end
+            P@RemoteAgent(type,remotePort);
+            switch type
+                case 'human'
+                    P.delay = 1;
+                case 'rsvp'
+                    P.delay = 1e-1;
+                case 'cv'
+                    P.delay = 1e-2;
+            end
+            P.accuracy = rand;
+            P.trueBehavior = false;
+            P.trueLabels = [];
+            if nargin > 2
                 for i = 1:2:length(varargin)
                     switch varargin{i}
                         case 'accuracy'
-                            A.accuracy = varargin{i+1};
+                            P.accuracy = varargin{i+1};
                         case 'trueBehavior'
-                            A.trueBehavior = varargin{i+1};
+                            P.trueBehavior = varargin{i+1};
                         case 'trueLabels'
-                            A.trueLabels = varargin{i+1}';
+                            P.trueLabels = varargin{i+1}';
                     end
                 end
             end

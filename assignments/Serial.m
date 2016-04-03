@@ -35,9 +35,9 @@ classdef Serial < Assignment
             A.batchSize = batch;
             A.policy = policy;
             for i = 1:length(control.agents)
-                if strcmp(control.agents{i}.type,'cv') || strcmp(control.agents{i}.type,'prototype_cv')
+                if strcmp(control.agents{i}.type,'cv')
                     A.cvIndex = i;
-                elseif strcmp(control.agents{i}.type,'human') || strcmp(control.agents{i}.type,'prototype_human')
+                elseif strcmp(control.agents{i}.type,'human')
                     A.humanIndex = i;
                 else
                     error('Only human and CV agents can be used in Serial.')
@@ -101,7 +101,7 @@ classdef Serial < Assignment
         % trigger distinct calls to handleAssignment through different
         % events.
             fprintf('Results received from %s.\n',src.type);
-            if strcmp(src.type,'human') || strcmp(src.type,'prototype_human')
+            if strcmp(src.type,'human')
                 obj.humanAssignment = obj.humanAssignment + 1;
                 obj.control.results(obj.humanIndex,...
                     obj.humanAssignmentTracker==obj.humanAssignment)...
