@@ -4,27 +4,37 @@ classdef All < Assignment
     
     properties
         iterationStatus % Boolean array which tracks the receipt of classification results
-        iterationListener % Listener for iterationComplete event
+%         iterationListener % Listener for iterationComplete event
         agentIndex % Boolean array for referencing agents
+        batchSize % size of batch to send to agents
     end
     
     events
-        iterationComplete % Event which triggers next iteration of assignment
+%         iterationComplete % Event which triggers next iteration of assignment
     end
     
     methods
         %------------------------------------------------------------------
         % Class constructor:
         
-        function A = All(control)
+        function A = All(control,batchSize)
         % ALL is the class constructor for assignment type all. It calls
         % the superclass constructor of assignment and adds a iteration
         % listener.
             A@Assignment(control,'all');
-            A.iterationListener = addlistener(A,'iterationComplete',...
-                @A.handleAssignment);
+%             A.iterationListener = addlistener(A,'iterationComplete',...
+%                 @A.handleAssignment);
             A.agentIndex = false(length(control.agents),1);
-            A.iterationStatus = A.agentIndex;
+            if nargin > 1
+                A.batchSize = batchSize;
+            else
+                A.batchSize = min(size(A.assignmentMatrix,2),256);
+            end
+            numBatches = floor(size(A.assignmentMatrix,2)/A.batchSize);
+            if numBatches*A.batchSize < A.assignmentMatrix
+                numBatches = numBatches + 1;
+            end
+            A.iterationStatus = repmat(A.agentIndex,1,numBatches);
         end
         
         %------------------------------------------------------------------
@@ -35,11 +45,11 @@ classdef All < Assignment
         % assigns the images on the first call. When called again, it ends
         % the experiment.
             if strcmp(event.EventName,'beginExperiment')
-                obj.assignmentMatrix(:) = true;
+                obj.assignmentMatrix(:,1:obj.batchSize) = true;
                 assignImages(obj);
             else
-                notify(obj.control,'experimentComplete')
-            end                
+                error('handleAssignment should not be called from within All.');
+            end
         end
         function handleResults(obj,src,event)
         % HANDLERESULTS populates the results table in control as results
@@ -48,11 +58,28 @@ classdef All < Assignment
             for i = 1:length(obj.control.agents)
                 obj.agentIndex(i) = eq(obj.control.agents{i},src);
             end
-            obj.control.results(obj.agentIndex,:) = readResults(src)';
-            obj.iterationStatus(obj.agentIndex) = true;
+            currentBatch = find(obj.iterationStatus(obj.agentIndex,:)==false,1,'first');
+            obj.control.results(obj.agentIndex,...
+                ((currentBatch-1)*obj.batchSize+1):(currentBatch*obj.batchSize))...
+                = readResults(src)';
+            obj.iterationStatus(obj.agentIndex,currentBatch) = true;
             fprintf('Results received from Agent %u.\n',find(obj.agentIndex));
-            if all(obj.iterationStatus)
-                notify(obj,'iterationComplete');
+            if all(obj.iterationStatus(:))
+                notify(obj.control,'experimentComplete');
+                return
+            elseif all(obj.iterationStatus(obj.agentIndex,:))
+                return % Wait for the other agents to finish
+            else
+                obj.assignmentMatrix(obj.agentIndex,:) = false;
+                if currentBatch == size(obj.iterationStatus,2)
+                    obj.assignmentMatrix(obj.agentIndex,...
+                        (currentBatch*obj.batchSize+1):end) = true;
+                else
+                    obj.assignmentMatrix(obj.agentIndex,...
+                        (currentBatch*obj.batchSize+1):((currentBatch+1)*obj.batchSize))...
+                        = true;
+                end
+                assignImages(obj,find(obj.agentIndex));
             end
         end
         function terminate(obj)
