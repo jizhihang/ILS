@@ -45,7 +45,7 @@ classdef Prototype < RemoteAgent
                         case 'trueBehavior'
                             P.trueBehavior = varargin{i+1};
                         case 'trueLabels'
-                            P.trueLabels = varargin{i+1}';
+                            P.trueLabels = varargin{i+1};
                     end
                 end
             end
@@ -59,7 +59,7 @@ classdef Prototype < RemoteAgent
         % receipt of an image assignment from a local agent. It will
         % classify images or terminate the agent upon receipt of the
         % 'complete' command.
-            X = fread(obj.socket,obj.socket.bytesAvailable,'double');
+            X = fread(obj.socket,obj.socket.bytesAvailable,'uint16');
             if strcmp(char(X)','complete')
                 terminate(obj);
                 return
@@ -71,7 +71,7 @@ classdef Prototype < RemoteAgent
                 Y(rand(n,1)<obj.accuracy) = 1;
             else
                 n = length(X);
-                Y(X) = obj.trueLabels(X);
+                Y = obj.trueLabels(X);
                 index = rand(n,1)>obj.accuracy;
                 Y(index) = -Y(index);
                 Y(Y<0) = 0;
@@ -79,9 +79,9 @@ classdef Prototype < RemoteAgent
             if obj.trueBehavior
                 pause(n*obj.delay);
             end
-            fwrite(obj.socket,Y(:),'double');
-            fprintf('Prototype_Human completed classification of %u images.\n',...
-                n)
+            fwrite(obj.socket,Y(:),'uint8');
+            fprintf([obj.type,' completed classification of %u images.\n'],...
+                n);
         end
         
         %------------------------------------------------------------------

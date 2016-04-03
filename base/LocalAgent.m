@@ -28,10 +28,10 @@ classdef LocalAgent < Agent
             end
             A.port = localPort;
             A.socket = udp(remoteHost,remotePort,'LocalHost',...
-                'localHost','LocalPort',A.port,'InputBufferSize',4096);
+                'localHost','LocalPort',A.port,'InputBufferSize',8192);
             A.control = ctrl;
             fopen(A.socket);
-            fwrite(A.socket,'LocalAgent: ready','double');
+            fwrite(A.socket,'LocalAgent: ready','uint16');
             fprintf('Added a %s agent to port %u.\n',A.type,A.port)
         end
         
@@ -43,19 +43,19 @@ classdef LocalAgent < Agent
         % for classification.
             obj.socket.readasyncmode = 'continuous';
             obj.socket.datagramreceivedfcn = @obj.resultsArrived;
-            fwrite(obj.socket,X,'double');
+            fwrite(obj.socket,X,'uint16');
         end
         function Y = readResults(obj)
         % READRESULTS will retrieve classification results from the remote
         % agent.
-            Y = fread(obj.socket,obj.socket.bytesAvailable,'double');
+            Y = fread(obj.socket,obj.socket.bytesAvailable,'uint8');
             Y(Y==0) = -1;
         end
         function terminate(obj)
         % TERMINATE sends a command to a remote agent to close and delete
         % the direct interface socket and then does the same for the local
         % agent.
-            fwrite(obj.socket,'complete','double');
+            fwrite(obj.socket,'complete','uint16');
             fclose(obj.socket);
             delete(obj.socket);
             fprintf('Agent terminated.\n')
