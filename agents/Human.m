@@ -37,7 +37,7 @@ classdef Human < RemoteAgent
         % receipt of an image assignment from a local agent. It will
         % classify images or terminate the agent upon receipt of the
         % 'complete' command.
-            X = fread(obj.socket);
+            X = fread(obj.socket,obj.socket.bytesAvailable,'double');
             if strcmp(char(X)','complete')
                 terminate(obj);
                 close(obj.gui);
@@ -61,7 +61,7 @@ classdef Human < RemoteAgent
         % SENDRESPONSE is a function called from the human interface gui
         % that will send the classified image labels back to the control
         % server as soon as the human agent has finished.
-            fwrite(obj.socket,obj.response(:));
+            fwrite(obj.socket,obj.response(:),'double');
             fprintf('Human completed classification of %u images.\n',...
                 length(obj.response))
             obj.response = [];

@@ -43,7 +43,7 @@ classdef ComputerVision < RemoteAgent
         % receipt of an image assignment from a local agent. It will
         % classify images or terminate the agent upon receipt of the
         % 'complete' command.
-            X = fread(obj.socket);
+            X = fread(obj.socket,obj.socket.bytesAvailable,'double');
             if strcmp(char(X)','complete')
                 terminate(obj);
             elseif strcmp(char(X)','test')
@@ -56,7 +56,7 @@ classdef ComputerVision < RemoteAgent
                 features = ExtractFeatures(obj,images,obj.DNNnet);
                 % classify images
                 Y = ClassifyFeatures(obj,features,obj.SVMmodel,obj.SVMscale);
-                fwrite(obj.socket,Y(:));
+                fwrite(obj.socket,Y(:),'double');
                 fprintf('Computer vision completed classification of %u images.\n',...
                     length(X))
             end

@@ -59,7 +59,7 @@ classdef Prototype < RemoteAgent
         % receipt of an image assignment from a local agent. It will
         % classify images or terminate the agent upon receipt of the
         % 'complete' command.
-            X = fread(obj.socket);
+            X = fread(obj.socket,obj.socket.bytesAvailable,'double');
             if strcmp(char(X)','complete')
                 terminate(obj);
                 return
@@ -71,14 +71,15 @@ classdef Prototype < RemoteAgent
                 Y(rand(n,1)<obj.accuracy) = 1;
             else
                 n = length(X);
-                Y = obj.trueLabels(X);
+                Y(X) = obj.trueLabels(X);
                 index = rand(n,1)>obj.accuracy;
                 Y(index) = -Y(index);
+                Y(Y<0) = 0;
             end
             if obj.trueBehavior
                 pause(n*obj.delay);
             end
-            fwrite(obj.socket,Y(:));
+            fwrite(obj.socket,Y(:),'double');
             fprintf('Prototype_Human completed classification of %u images.\n',...
                 n)
         end

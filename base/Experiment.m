@@ -35,7 +35,7 @@ classdef Experiment < handle
             E.localPort = 9000; % **Hard-coded**
             E.control = Control;
             E.socket = udp('0.0.0.0','LocalHost','localHost',...
-                'LocalPort',E.localPort);
+                'LocalPort',E.localPort,'InputBufferSize',4096);
             E.gui = experiment_interface(E);
             E.listener = addlistener(E.control,'experimentComplete',...
                 @E.endExperiment);
@@ -73,7 +73,7 @@ classdef Experiment < handle
         % experiment.
             fclose(obj.socket);
             for i = 1:length(obj.control.agents)
-                fwrite(obj.control.agents{i}.socket,'test');
+                fwrite(obj.control.agents{i}.socket,'test','double');
             end
         end
         
@@ -146,7 +146,7 @@ classdef Experiment < handle
         % NEWAGENT receives the direct interface information from the
         % agent requesting to join the network and passes the information
         % to the ADDAGENT function in the control object.
-            type = char(fread(obj.socket))';
+            type = char(fread(obj.socket,obj.socket.bytesAvailable,'double'))';
             uniqueLocalPort = newPort(obj);
             remoteHost = event.Data.DatagramAddress;
             remotePort = event.Data.DatagramPort;

@@ -41,9 +41,9 @@ classdef (Abstract) RemoteAgent < Agent
                 error('Not enough input arguments to create RemoteAgent.')
             end
             A.socket = udp(localHost,localPort,'LocalHost',...
-                'localHost','LocalPort',A.port);
+                'localHost','LocalPort',A.port,'InputBufferSize',4096);
             fopen(A.socket);
-            fwrite(A.socket,A.type);
+            fwrite(A.socket,A.type,'double');
             fclose(A.socket);
             delete(A.socket);
             waitForAgent(A);
@@ -74,7 +74,7 @@ classdef (Abstract) RemoteAgent < Agent
         % the local agent. It calls UPDATESOCKET upon receipt of an
         % incoming message.
             obj.socket = udp('0.0.0.0','LocalHost','localHost',...
-                'LocalPort',obj.port);
+                'LocalPort',obj.port,'InputBufferSize',4096);
             fopen(obj.socket);
             if obj.socket.bytesAvailable > 0
                 updateSocket(obj);
@@ -95,11 +95,11 @@ classdef (Abstract) RemoteAgent < Agent
                 localHost = obj.socket.DatagramAddress;
                 localPort = obj.socket.DatagramPort;
             end
-            fread(obj.socket);
+            fread(obj.socket,obj.socket.bytesAvailable,'double');
             fclose(obj.socket);
             delete(obj.socket);
             obj.socket = udp(localHost,localPort,'LocalHost',...
-                'localHost','LocalPort',obj.port);
+                'localHost','LocalPort',obj.port,'InputBufferSize',4096);
             obj.status = true;
             fprintf('Agent is connected to the Image Labeling System.\n')
             start(obj)

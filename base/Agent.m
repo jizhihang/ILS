@@ -2,7 +2,7 @@ classdef (Abstract) Agent < handle
 % AGENT is the parent class of both LocalAgent and RemoteAgent.
     
     properties
-        type % **Options: 'Human', 'RSVP', 'CV'
+        type % **Options: 'human','rsvp','cv'
     end
     
     properties (Abstract)
