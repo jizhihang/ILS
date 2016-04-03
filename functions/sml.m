@@ -14,26 +14,18 @@ function [YMLE,MLE,PI] = sml(X)
 % (c) 2013 Kluger Lab
 % modified by Addison Bohannon (01 APR 2016)
 
- [numAgents,numSamples] = size(X);
- indX = false(numAgents,1);
- for i = 1:numAgents
-     indX(i) = length(unique(X(i,:))) > 1;
- end
- indY = true(numSamples,1);
- for i = 1:numSamples
-     indY(i) = all(unique(X(:,i)~=0));
- end
- if length(indY) < length(indX)
+ [numAgents,~] = size(X);
+ indexSamples = all(X~=0,1);
+ if length(indexSamples) < numAgents
      error('Too few samples for the number of agents.')
  end
- Xhat = sign(X(indX,indY)');
+ Xhat = sign(X(:,indexSamples)');
  [S,~] = size(Xhat);
  CMAT = cov(Xhat);     %computes the covariance
  VMAT = varcov(CMAT,S); %variance  of covariance
         
  %log weighted
- PI = zeros(numAgents,1);
- [PI(indX),~] = covadj_weighted(CMAT,VMAT);
+ [PI,~] = covadj_weighted(CMAT,VMAT);
  pi_wgs = nanmean(PI);
  if pi_wgs < 0
      PI = -PI;

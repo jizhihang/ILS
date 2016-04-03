@@ -31,7 +31,7 @@ classdef All < Assignment
                 A.batchSize = min(size(A.assignmentMatrix,2),256);
             end
             numBatches = floor(size(A.assignmentMatrix,2)/A.batchSize);
-            if numBatches*A.batchSize < A.assignmentMatrix
+            if numBatches*A.batchSize < size(A.assignmentMatrix,2)
                 numBatches = numBatches + 1;
             end
             A.iterationStatus = repmat(A.agentIndex,1,numBatches);
@@ -59,9 +59,14 @@ classdef All < Assignment
                 obj.agentIndex(i) = eq(obj.control.agents{i},src);
             end
             currentBatch = find(obj.iterationStatus(obj.agentIndex,:)==false,1,'first');
-            obj.control.results(obj.agentIndex,...
-                ((currentBatch-1)*obj.batchSize+1):(currentBatch*obj.batchSize))...
-                = readResults(src)';
+            if currentBatch == size(obj.iterationStatus,2)
+                obj.control.results(obj.agentIndex,...
+                    ((currentBatch-1)*obj.batchSize+1):end) = readResults(src)';
+            else
+                obj.control.results(obj.agentIndex,...
+                    ((currentBatch-1)*obj.batchSize+1):(currentBatch*obj.batchSize))...
+                    = readResults(src)';
+            end
             obj.iterationStatus(obj.agentIndex,currentBatch) = true;
             fprintf('Results received from Agent %u.\n',find(obj.agentIndex));
             if all(obj.iterationStatus(:))
@@ -71,7 +76,7 @@ classdef All < Assignment
                 return % Wait for the other agents to finish
             else
                 obj.assignmentMatrix(obj.agentIndex,:) = false;
-                if currentBatch == size(obj.iterationStatus,2)
+                if (currentBatch+1) == size(obj.iterationStatus,2)
                     obj.assignmentMatrix(obj.agentIndex,...
                         (currentBatch*obj.batchSize+1):end) = true;
                 else
@@ -82,11 +87,11 @@ classdef All < Assignment
                 assignImages(obj,find(obj.agentIndex));
             end
         end
-        function terminate(obj)
-        % TERMINATE will delete all listeners in the assignment
-            delete(obj.iterationListener);
-            terminate@Assignment(obj);
-        end
+%         function terminate(obj)
+%         % TERMINATE will delete all listeners in the assignment
+%             delete(obj.iterationListener);
+%             terminate@Assignment(obj);
+%         end
         function resetAssignment(obj)
         % RESETASSIGNMENT will return assignment to initial state for a
         % follow-on experiment
