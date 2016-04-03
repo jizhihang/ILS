@@ -22,8 +22,7 @@ classdef (Abstract) Assignment < handle
         % Class constructor:
         
         function A = Assignment(control,type)
-        % ASSIGNMENT is the class constructor for the assignment class. It
-        % will declare 
+        % ASSIGNMENT is the class constructor for the assignment class.
             A.control = control;
             A.type = type;
             A.assignmentMatrix = false(length(A.control.agents),length(A.control.data));

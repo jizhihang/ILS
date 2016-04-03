@@ -69,10 +69,6 @@ classdef GAP < Assignment
             switch event.EventName
                 case 'iterationComplete'
                     getAssignment(obj);
-                    if all(~obj.assignmentMatrix(:))
-                        notify(obj.control,'experimentComplete');
-                        return
-                    end
                 case 'beginExperiment'
                     numAgents = length(obj.control.agents);
                     numImages = numAgents*(numAgents+1);
@@ -80,13 +76,13 @@ classdef GAP < Assignment
                     initAssignment = randperm(length(obj.imageCompletion));
                     initAssignment = initAssignment(1:numImages);
                     obj.assignmentMatrix(:,initAssignment) = true;
+                    for i = 1:length(obj.agentIndex)
+                        if ~any(obj.assignmentMatrix(i,:))
+                            obj.iterationStatus(i) = true;
+                        end
+                    end
+                    assignImages(obj);
             end
-            for i = 1:length(obj.agentIndex)
-                if ~any(obj.assignmentMatrix(i,:))
-                    obj.iterationStatus(i) = true;
-                end
-            end
-            assignImages(obj);
         end
         function handleResults(obj,src,event)
         % HANDLERESULTS populates the results table in control as results
@@ -135,7 +131,7 @@ classdef GAP < Assignment
             temp(obj.imageConfidence(~obj.imageCompletion)>=obj.threshold) = true;
             obj.imageCompletion(~obj.imageCompletion) = temp;
             if all(obj.imageCompletion)
-                obj.assignmentMatrix(:) = false;
+                notify(obj.control,'experimentComplete');
                 return
             end
             temp = max(obj.imageConfidence) + repmat(obj.agentReliability,1,size(obj.value,2))...
@@ -169,7 +165,15 @@ classdef GAP < Assignment
                     reshape(tempAssign,length(obj.budget),[])==1;
             catch
                 warning('Problem has no feasible solutions.');
+                notify(obj.control,'experimentComplete');
+                return
             end
+            for i = 1:length(obj.agentIndex)
+                if ~any(obj.assignmentMatrix(i,:))
+                    obj.iterationStatus(i) = true;
+                end
+            end
+            assignImages(obj);
         end
     
     %----------------------------------------------------------------------

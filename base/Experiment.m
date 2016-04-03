@@ -101,6 +101,7 @@ classdef Experiment < handle
                         obj.balAcc(obj.testCounter)]
                 end
             end
+            obj.control.results(:) = 0;
             resetAssignment(obj.control.assignment);
             tic;
             notify(obj.control,'beginExperiment');
