@@ -75,8 +75,11 @@ classdef GAP < Assignment
                     end
                 case 'beginExperiment'
                     numAgents = length(obj.control.agents);
-                    init_assignment = numAgents*(numAgents+1);
-                    obj.assignmentMatrix(:,1:min(init_assignment,size(obj.assignmentMatrix,2))) = true;
+                    numImages = numAgents*(numAgents+1);
+                    numImages = min(numImages,size(obj.assignmentMatrix,2));
+                    initAssignment = randperm(length(obj.imageCompletion));
+                    initAssignment = initAssignment(1:numImages);
+                    obj.assignmentMatrix(:,initAssignment) = true;
             end
             for i = 1:length(obj.agentIndex)
                 if ~any(obj.assignmentMatrix(i,:))
