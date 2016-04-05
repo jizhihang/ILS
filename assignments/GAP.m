@@ -19,6 +19,7 @@ classdef GAP < Assignment
         imageConfidence % numImages*1 array of current confidence in label
         imageCompletion % numImages*1 boolean of completion of images
         threshold % confidence threshold for an image to be complete
+        newAssignments % accumulates stats about the assignments on each iteration
     end
     
     events
@@ -33,7 +34,7 @@ classdef GAP < Assignment
         % ALL is the class constructor for assignment type all. It calls
         % the superclass constructor of assignment and adds a iteration
         % listener.
-            A@Assignment(control,'all');
+            A@Assignment(control,'gap');
             A.iterationListener = addlistener(A,'iterationComplete',...
                 @A.handleAssignment);
             A.agentIndex = false(length(control.agents),1);
@@ -57,6 +58,7 @@ classdef GAP < Assignment
             A.imageConfidence = zeros(length(control.data),1);
             A.imageCompletion = false(size(A.imageConfidence));
             A.threshold = confThreshold;
+            A.newAssignments = [];
         end
         
         %------------------------------------------------------------------
@@ -82,6 +84,7 @@ classdef GAP < Assignment
                         end
                     end
                     assignImages(obj);
+                    obj.newAssignments(end+1) = sum(obj.assignmentMatrix(:));
             end
         end
         function handleResults(obj,src,event)
@@ -117,6 +120,7 @@ classdef GAP < Assignment
             obj.agentReliability(:) = 0;
             obj.imageConfidence(:) = 0;
             obj.imageCompletion(:) = false;
+            obj.newAssignments = [];
         end
                 
         %------------------------------------------------------------------
@@ -150,16 +154,16 @@ classdef GAP < Assignment
                 repmat(obj.cost,1,length(find(~obj.imageCompletion))),...
                 obj.budget);
             % Run GAP (written by Addison)
-%             tempAssign = branchAndBound(v,1e2*Aineq,1e2*bineq,Aeq,beq,...
-%                 'greedy');
+            tempAssign = branchAndBound(v,1e2*Aineq,1e2*bineq,Aeq,beq,...
+                'greedy');
             % Run MATLAB solver
-            intcon = 1:length(v);
-            lb = zeros(length(v),1);
-            ub = ones(length(v),1);
-            options = optimoptions('intlinprog','Display','none',...
-                'CutGeneration','basic');
-            tempAssign = intlinprog(-v,intcon,Aineq,bineq,Aeq,beq,...
-                lb,ub,options);
+%             intcon = 1:length(v);
+%             lb = zeros(length(v),1);
+%             ub = ones(length(v),1);
+%             options = optimoptions('intlinprog','Display','none',...
+%                 'CutGeneration','basic');
+%             tempAssign = intlinprog(-v,intcon,Aineq,bineq,Aeq,beq,...
+%                 lb,ub,options);
             try
                 obj.assignmentMatrix(:,~obj.imageCompletion) = ...
                     reshape(tempAssign,length(obj.budget),[])==1;
@@ -174,6 +178,7 @@ classdef GAP < Assignment
                 end
             end
             assignImages(obj);
+            obj.newAssignments(end+1) = sum(obj.assignmentMatrix(:));
         end
     
     %----------------------------------------------------------------------

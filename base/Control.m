@@ -9,7 +9,7 @@ classdef Control < handle
         agents % Array of LocalAgent objects
         data % Array of image indices
         assignment % Assignment type (options): 'random', 'gap', 'all', 'serial'
-        fusion % Fusion type (ptions): 'sum', 'sml', 'mv'
+        fusion % Fusion type (options): 'sum', 'sml', 'mv', 'overwrite'
         results % Table of classification results (numAgents x numTrials)
     end
     
@@ -137,6 +137,18 @@ classdef Control < handle
                     temp = obj.results;
                     temp(obj.results==0) = NaN;
                     y = mode(temp,1);
+                case 'overwrite'
+                    if any(strcmp(obj.assignment.type,{'serial','serial_bci'}))
+                        y = obj.results(obj.assignment.cvIndex,:);
+                        temp = obj.results(obj.assignment.humanIndex,:);
+                        y(obj.results(obj.assignment.humanIndex,:)~=0) = ...
+                            temp(obj.results(obj.assignment.humanIndex,:)~=0);
+                    else
+                        warning('human_overwrite only works with serial architectures.');
+                        temp = obj.results;
+                        temp(obj.results==0) = NaN;
+                        y = mode(temp,1);
+                    end
                 otherwise
                     warning('A valid fusion method is not set.');
                     return

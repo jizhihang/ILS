@@ -77,7 +77,7 @@ classdef Prototype < RemoteAgent
                 Y(Y<0) = 0;
             end
             if obj.trueBehavior
-                pause(n*obj.delay);
+                pause(sum(exprnd(obj.delay*ones(n,1))));
             end
             fwrite(obj.socket,Y(:),'uint8');
             fprintf([obj.type,' completed classification of %u images.\n'],...
