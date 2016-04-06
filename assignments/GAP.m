@@ -155,7 +155,7 @@ classdef GAP < Assignment
                 obj.budget);
             % Run GAP (written by Addison)
             tempAssign = branchAndBound(v,1e2*Aineq,1e2*bineq,Aeq,beq,...
-                'greedy');
+                'subgradient');
             % Run MATLAB solver
 %             intcon = 1:length(v);
 %             lb = zeros(length(v),1);
