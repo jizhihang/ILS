@@ -86,39 +86,41 @@ else
         % u(k+1) := u(k) + t*(Aeq*x-beq). Iterate until step size is less
         % than tolerance.
         case 'subgradient'
-            tol = 1e-3; % Tolerance for sub-gradient method
-            t = 2; % Initial step size (reciprocal) for descent algorithm
-            Zdu = 0;
+            Zdu = sum(Z)+sum(u); % Current objective value
+            ztol = 1e-3*Zdu; % Tolerance ratio for objective function
+            gtol = 1e-4; % Tolerance ratio for gradient
+            max_iter = 500; % Maximum iterations for sub-gradient descent
+            t = 1; % Initial step size for descent algorithm
+            k = 1; % Iteration counter
+            
             while flag
-                % Solve knapsack problem
+                % Calculate sub-gradient and update multiplier; terminate
+                % if gradient is sufficiently close to zero
+                g = (Aeq*x-beq);
+                if t == 1
+                    gtol = gtol*norm(g,1);
+                end
+                if sum(g)^2/t <= gtol || k > max_iter
+                    flag = false;
+                    continue;
+                else
+                    u = u + g/t;
+                    t = t + 1;
+                end
+                
+                % Solve knapsack problem with updated multipliers
+                V = v - Aeq'*u;
                 for j = J
-                    V = v - Aeq'*u;
                     [x(Aineq(j,:)~=0),Z(j)] = knapsack(V(Aineq(j,:)~=0),...
                             Aineq(j,Aineq(j,:)~=0),bineq(j));
                 end
                 
-                % Terminate descent algorithm if target function has not
-                % decreased sufficiently
-                if abs(sum(Z)+sum(u)-Zdu) < tol
-                    flag = false;
-                    continue;
-                else
-                    Zdu = sum(Z)+sum(u);
+                % Decrease step size if objective has plateaued
+                if abs(sum(Z)+sum(u)-Zdu) < ztol
+                    t = t+100;
                 end
-                
-                % Calculate sub-gradient and update multiplier; terminate
-                % if gradient is sufficiently close to zero
-                g = (Aeq*x-beq);
-                if t == 2
-                    g0 = norm(g);
-                end
-                if norm(g) < tol*g0
-                    flag = false;
-                    continue;
-                else
-                    u = u + g/(t*norm(g));
-                    t = t+1;
-                end
+                Zdu = sum(Z)+sum(u);
+                k = k + 1;
                 
             end
             
