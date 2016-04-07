@@ -43,7 +43,7 @@ if nargin > 5
             '. Proceeding with multiplierAdjusment method.'])
     end
 else
-    method = 'multiplierAdjustment';
+    method = 'subgradient';
 end
 
 % Determine problem size
@@ -128,8 +128,8 @@ end
 % solution, then return. Else continue with multiplier adjustment method.
 if strcmp(method,'greedy') && ~isempty(X)
     return;
-% else
-%     method = 'multiplierAdjustment';
+else
+    method = 'subgradient';
 end
 
 % Initialize branch and bound algorithm. Live is a cell array where each

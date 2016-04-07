@@ -49,8 +49,6 @@ for i = I
         u(i) = V(2);
     elseif length(V) == 1
         u(i) = V;
-    else
-        u(i) = 0;
     end
 end
 
@@ -87,25 +85,24 @@ else
         % than tolerance.
         case 'subgradient'
             Zdu = sum(Z)+sum(u); % Current objective value
-            ztol = 1e-3*Zdu; % Tolerance ratio for objective function
-            gtol = 1e-4; % Tolerance ratio for gradient
+            ztol = 1e-2*Zdu; % Tolerance ratio for objective function
+            gtol = 1e-3; % Tolerance ratio for gradient
             max_iter = 500; % Maximum iterations for sub-gradient descent
-            t = 1; % Initial step size for descent algorithm
+            t = 0.1; % Initial step size for descent algorithm
             k = 1; % Iteration counter
             
             while flag
                 % Calculate sub-gradient and update multiplier; terminate
                 % if gradient is sufficiently close to zero
                 g = (Aeq*x-beq);
-                if t == 1
-                    gtol = gtol*norm(g,1);
+                if k == 1
+                    gtol = abs(gtol*sum(g));
                 end
-                if sum(g)^2/t <= gtol || k > max_iter
+                if (t*(sum(g)^2)) <= gtol || k > max_iter
                     flag = false;
                     continue;
                 else
-                    u = u + g/t;
-                    t = t + 1;
+                    u = u + t*g;
                 end
                 
                 % Solve knapsack problem with updated multipliers
@@ -117,7 +114,7 @@ else
                 
                 % Decrease step size if objective has plateaued
                 if abs(sum(Z)+sum(u)-Zdu) < ztol
-                    t = t+100;
+                    t = t^2;
                 end
                 Zdu = sum(Z)+sum(u);
                 k = k + 1;

@@ -13,7 +13,7 @@ classdef GAP < Assignment
         iterationListener % Listener for iterationComplete event
         agentIndex % Boolean array for referencing agents
         value % numAgents*numImages array of assignment values
-        cost % numAgents*numImages array of assignment costs
+        cost % numAgents*1 array of assignment costs
         budget % numAgents*1 array of budget for each agent for each iteration
         agentReliability % numAgents*1 array of the current reliability estimate
         imageConfidence % numImages*1 array of current confidence in label
@@ -40,20 +40,18 @@ classdef GAP < Assignment
             A.agentIndex = false(length(control.agents),1);
             A.iterationStatus = A.agentIndex;
             A.value = ones(size(A.assignmentMatrix));
-            A.cost = zeros(size(A.agentIndex));
-            for i = 1:length(A.cost)
+            A.cost = ones(size(A.agentIndex));
+            A.budget = ones(size(A.cost));
+            for i = 1:length(A.budget)
                 switch control.agents{i}.type
                     case 'cv'
-                        A.cost(i) = 1e-2;
+                        A.budget(i) = 1e2*iterationInterval;
                     case 'rsvp'
-                        A.cost(i) = 1e-1;
+                        A.budget(i) = 1e1*iterationInterval;
                     case 'human'
-                        A.cost(i) = 1;
-                    otherwise
-                        A.cost(i) = inf;
+                        A.budget(i) = 1*iterationInterval;
                 end
             end
-            A.budget = iterationInterval*ones(size(A.cost));
             A.agentReliability = zeros(size(A.cost));
             A.imageConfidence = zeros(length(control.data),1);
             A.imageCompletion = false(size(A.imageConfidence));
@@ -149,12 +147,13 @@ classdef GAP < Assignment
                 notify(obj.control,'experimentComplete');
                 return
             end
+            setBudget(obj);
             [v,Aineq,bineq,Aeq,beq] = convertProblem(...
                 obj.value(:,~obj.imageCompletion),...
                 repmat(obj.cost,1,length(find(~obj.imageCompletion))),...
                 obj.budget);
             % Run GAP (written by Addison)
-            tempAssign = branchAndBound(v,1e2*Aineq,1e2*bineq,Aeq,beq,...
+            tempAssign = branchAndBound(v,Aineq,bineq,Aeq,beq,...
                 'subgradient');
             % Run MATLAB solver
 %             intcon = 1:length(v);
@@ -179,6 +178,19 @@ classdef GAP < Assignment
             end
             assignImages(obj);
             obj.newAssignments(end+1) = sum(obj.assignmentMatrix(:));
+        end
+        function setBudget(obj)
+        % SETBUDGET dynamically sets the iteration interval to
+        % ensure that each image can be assigned
+            imagesRemaining = sum(~obj.imageCompletion);
+            totalCost = obj.cost.*sum(obj.value(:,~obj.imageCompletion)>0,2);
+            budgetCost = totalCost;
+            budgetCost(totalCost>obj.budget) = obj.budget(totalCost>obj.budget);
+            while sum(budgetCost./obj.cost) < imagesRemaining
+                obj.budget = 2*obj.budget;
+                budgetCost = totalCost;
+                budgetCost(totalCost>obj.budget) = obj.budget(totalCost>obj.budget);
+            end
         end
     
     %----------------------------------------------------------------------
