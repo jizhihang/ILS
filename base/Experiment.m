@@ -15,6 +15,8 @@ classdef Experiment < handle
         numImages % Number of images in database
         testCounter % Counter for automated tests
         assignmentStats % statistics from GAP assignment
+        intervalStats % statistics from GAP assignment
+        imageStats % confidence statistics from assignment
     end
     
     properties (Access = private)
@@ -55,6 +57,8 @@ classdef Experiment < handle
                 E.labels = [];
             end
             E.assignmentStats = [];
+            E.intervalStats = [];
+            E.imageStats = [];
         end
         
         %------------------------------------------------------------------
@@ -89,12 +93,17 @@ classdef Experiment < handle
                 obj.balAcc = zeros(endCount,1);
                 delete(obj.listener);
                 obj.assignmentStats = cell(endCount,1);
+                obj.intervalStats = cell(endCount,1);
+                obj.imageStats = zeros(endCount,length(obj.control.data));
                 obj.listener = addlistener(obj.control,...
                     'experimentComplete',@obj.autoRun);
             else
                 obj.testCounter = obj.testCounter + 1;
+                [~,imageConfidence,~] = sml(obj.control.results);
+                obj.imageStats(obj.testCounter,:) = reshape(abs(imageConfidence),1,[]);
                 if strcmp(obj.control.assignment.type,'gap')
                     obj.assignmentStats{obj.testCounter} = obj.control.assignment.newAssignments;
+                    obj.intervalStats{obj.testCounter} = obj.control.assignment.iterationInterval;
                 end
                 if obj.testCounter == endCount
                     endExperiment(obj);

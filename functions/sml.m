@@ -14,7 +14,7 @@ function [YMLE,MLE,PI] = sml(X)
 % (c) 2013 Kluger Lab
 % modified by Addison Bohannon (01 APR 2016)
 
- [numAgents,~] = size(X);
+ [numAgents,totalSamples] = size(X);
  indexSamples = all(X~=0,1);
  numSamples = length(indexSamples);
  if numSamples < numAgents
@@ -32,12 +32,16 @@ function [YMLE,MLE,PI] = sml(X)
  end
     
  %spectral-metalearner
- MLE = Xhat*PI;
- YMLE = sign(MLE);
+ MLEhat = Xhat*PI;
+ YMLEhat = sign(MLEhat);
 
  %iterative MLE
- [~,PI] = iMLE(Xhat,YMLE);
- MLE = X'*PI;
+%  [~,~,PI] = iMLE(Xhat,YMLEhat,MLEhat);
+%  MLE = X'*PI;
+%  YMLE = sign(MLE);
+ MLE = zeros(totalSamples,1);
+ [~,MLE(indexSamples),PI] = iMLE(Xhat,YMLEhat,MLEhat);
+ MLE(~indexSamples) = X(:,~indexSamples)'*PI;
  YMLE = sign(MLE);
 
 end
@@ -105,12 +109,11 @@ function [ R, D, CMAT2 ] = covadj_weighted( CMAT, VMAT )
 
 end
 
-function [YMLE,PI] = iMLE( Y, Y0 )
- YBCK = 0.*Y0;
- YMLE = Y0;
+function [YMLE,MLE,PI] = iMLE( X, YMLE, MLE )
+ YBCK = 0.*YMLE;
  Nsteps = 0;
 
- [S, M] = size(Y);
+ [S, M] = size(X);
  tol = 1 - 1./(S.^2);
  
  psi = zeros(M,1);
@@ -121,8 +124,8 @@ function [YMLE,PI] = iMLE( Y, Y0 )
   YBCK = YMLE;
   
   for i=1:M
-   psi(i) = sum(YMLE>0 & Y(:,i)>0)./sum(YMLE>0);
-   eta(i) = sum(YMLE<0 & Y(:,i)<0)./sum(YMLE<0);
+   psi(i) = sum(YMLE>0 & X(:,i)>0)./sum(YMLE>0);
+   eta(i) = sum(YMLE<0 & X(:,i)<0)./sum(YMLE<0);
   end
   psi = ((tol.* (2 * psi - 1)) + 1)./2;
   eta = ((tol.* (2 * eta - 1)) + 1)./2;  
@@ -132,8 +135,8 @@ function [YMLE,PI] = iMLE( Y, Y0 )
   
   MLE = 0;
   for i=1:M
-   MLE = MLE + ( log( (1-Y(:,i))./2 + Y(:,i).*psi(i) ) - ...
-                   log( (1+Y(:,i))./2 - Y(:,i).*eta(i) ) );                   
+   MLE = MLE + ( log( (1-X(:,i))./2 + X(:,i).*psi(i) ) - ...
+                   log( (1+X(:,i))./2 - X(:,i).*eta(i) ) );                   
   end
   YMLE = sign(MLE);
  end

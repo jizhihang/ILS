@@ -46,6 +46,7 @@ classdef Prototype < RemoteAgent
                             P.trueBehavior = varargin{i+1};
                         case 'trueLabels'
                             P.trueLabels = varargin{i+1};
+                            P.trueLabels = P.trueLabels(:);
                     end
                 end
             end

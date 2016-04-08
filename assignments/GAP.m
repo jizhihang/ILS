@@ -20,6 +20,9 @@ classdef GAP < Assignment
         imageCompletion % numImages*1 boolean of completion of images
         threshold % confidence threshold for an image to be complete
         newAssignments % accumulates stats about the assignments on each iteration
+        iterationInterval % dynamic tracker of each iteration interval
+        agentCost % numAgents*1 array which keeps estimated processing time for each agent
+        originalInterval % initial interval before adaptive increase
     end
     
     events
@@ -41,22 +44,25 @@ classdef GAP < Assignment
             A.iterationStatus = A.agentIndex;
             A.value = ones(size(A.assignmentMatrix));
             A.cost = ones(size(A.agentIndex));
-            A.budget = ones(size(A.cost));
-            for i = 1:length(A.budget)
+            A.agentCost = A.cost;
+            A.originalInterval = iterationInterval;
+            for i = 1:length(A.control.agents)
                 switch control.agents{i}.type
                     case 'cv'
-                        A.budget(i) = 1e2*iterationInterval;
+                        A.agentCost(i) = 1e-2;
                     case 'rsvp'
-                        A.budget(i) = 1e1*iterationInterval;
+                        A.agentCost(i) = 1e-1;
                     case 'human'
-                        A.budget(i) = 1*iterationInterval;
+                        A.agentCost(i) = 1;
                 end
             end
+            A.budget = A.originalInterval./A.agentCost;
             A.agentReliability = zeros(size(A.cost));
             A.imageConfidence = zeros(length(control.data),1);
             A.imageCompletion = false(size(A.imageConfidence));
             A.threshold = confThreshold;
             A.newAssignments = [];
+            A.iterationInterval = [];
         end
         
         %------------------------------------------------------------------
@@ -81,8 +87,9 @@ classdef GAP < Assignment
                             obj.iterationStatus(i) = true;
                         end
                     end
-                    assignImages(obj);
                     obj.newAssignments(end+1) = sum(obj.assignmentMatrix(:));
+                    obj.iterationInterval(end+1) = numImages*max(obj.agentCost);
+                    assignImages(obj);
             end
         end
         function handleResults(obj,src,event)
@@ -119,6 +126,8 @@ classdef GAP < Assignment
             obj.imageConfidence(:) = 0;
             obj.imageCompletion(:) = false;
             obj.newAssignments = [];
+            obj.iterationInterval = [];
+            obj.budget = obj.originalInterval./obj.agentCost;
         end
                 
         %------------------------------------------------------------------
@@ -147,14 +156,17 @@ classdef GAP < Assignment
                 notify(obj.control,'experimentComplete');
                 return
             end
-            setBudget(obj);
+            if ~setBudget(obj)
+                notify(obj.control,'experimentComplete');
+                return
+            end
             [v,Aineq,bineq,Aeq,beq] = convertProblem(...
                 obj.value(:,~obj.imageCompletion),...
                 repmat(obj.cost,1,length(find(~obj.imageCompletion))),...
                 obj.budget);
             % Run GAP (written by Addison)
             tempAssign = branchAndBound(v,Aineq,bineq,Aeq,beq,...
-                'subgradient');
+                'greedy');
             % Run MATLAB solver
 %             intcon = 1:length(v);
 %             lb = zeros(length(v),1);
@@ -176,21 +188,29 @@ classdef GAP < Assignment
                     obj.iterationStatus(i) = true;
                 end
             end
-            assignImages(obj);
             obj.newAssignments(end+1) = sum(obj.assignmentMatrix(:));
+            assignImages(obj);
         end
-        function setBudget(obj)
+        function flag = setBudget(obj)
         % SETBUDGET dynamically sets the iteration interval to
         % ensure that each image can be assigned
             imagesRemaining = sum(~obj.imageCompletion);
             totalCost = obj.cost.*sum(obj.value(:,~obj.imageCompletion)>0,2);
             budgetCost = totalCost;
             budgetCost(totalCost>obj.budget) = obj.budget(totalCost>obj.budget);
-            while sum(budgetCost./obj.cost) < imagesRemaining
-                obj.budget = 2*obj.budget;
+            while sum(budgetCost./obj.cost) < 1.25*imagesRemaining
+                if all(obj.budget==256)
+                    % Return when there are more images left to label than
+                    % viable assignments
+                    flag = false;
+                    return
+                end
+                obj.budget = min(2*obj.budget,256);
                 budgetCost = totalCost;
                 budgetCost(totalCost>obj.budget) = obj.budget(totalCost>obj.budget);
             end
+            flag = true;
+            obj.iterationInterval(end+1) = max(obj.budget.*obj.agentCost);
         end
     
     %----------------------------------------------------------------------
