@@ -164,9 +164,6 @@ classdef GAP < Assignment
                 obj.value(:,~obj.imageCompletion),...
                 repmat(obj.cost,1,length(find(~obj.imageCompletion))),...
                 obj.budget);
-            % Run GAP (written by Addison)
-            tempAssign = branchAndBound(v,Aineq,bineq,Aeq,beq,...
-                'greedy');
             % Run MATLAB solver
 %             intcon = 1:length(v);
 %             lb = zeros(length(v),1);
