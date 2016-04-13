@@ -165,13 +165,13 @@ classdef GAP < Assignment
                 repmat(obj.cost,1,length(find(~obj.imageCompletion))),...
                 obj.budget);
             % Run MATLAB solver
-%             intcon = 1:length(v);
-%             lb = zeros(length(v),1);
-%             ub = ones(length(v),1);
-%             options = optimoptions('intlinprog','Display','none',...
-%                 'CutGeneration','basic');
-%             tempAssign = intlinprog(-v,intcon,Aineq,bineq,Aeq,beq,...
-%                 lb,ub,options);
+            intcon = 1:length(v);
+            lb = zeros(length(v),1);
+            ub = ones(length(v),1);
+            options = optimoptions('intlinprog','Display','none',...
+                'CutGeneration','basic');
+            tempAssign = intlinprog(-v,intcon,Aineq,bineq,Aeq,beq,...
+                lb,ub,options);
             try
                 obj.assignmentMatrix(:,~obj.imageCompletion) = ...
                     reshape(tempAssign,length(obj.budget),[])==1;
