@@ -27,8 +27,8 @@ classdef LocalAgent < Agent
                 error('Not enough information to construct HostAgent')
             end
             A.port = localPort;
-            A.socket = udp(remoteHost,remotePort,'LocalHost',...
-                'localHost','LocalPort',A.port,'InputBufferSize',8192);
+            A.socket = udp(remoteHost,remotePort,'LocalPort'...
+                ,A.port,'InputBufferSize',8192);
             A.control = ctrl;
             fopen(A.socket);
             fwrite(A.socket,'LocalAgent: ready','uint16');
