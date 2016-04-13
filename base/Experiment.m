@@ -37,8 +37,8 @@ classdef Experiment < handle
             delete(instrfindall); % delete any existing udp objects
             E.localPort = 9000; % **Hard-coded**
             E.control = Control;
-            E.socket = udp('0.0.0.0','LocalHost','localHost',...
-                'LocalPort',E.localPort,'InputBufferSize',8192);
+            E.socket = udp('0.0.0.0','LocalPort',E.localPort,...
+                'InputBufferSize',4096);
             E.gui = experiment_interface(E);
             E.listener = addlistener(E.control,'experimentComplete',...
                 @E.endExperiment);
