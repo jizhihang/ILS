@@ -28,7 +28,7 @@ classdef LocalAgent < Agent
             end
             A.port = localPort;
             A.socket = udp(remoteHost,remotePort,'LocalPort'...
-                ,A.port,'InputBufferSize',8192);
+                ,A.port,'InputBufferSize',4096);
             A.control = ctrl;
             fopen(A.socket);
             fwrite(A.socket,'LocalAgent: ready','uint16');
