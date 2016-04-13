@@ -26,7 +26,7 @@ classdef (Abstract) RemoteAgent < Agent
             A.port = remotePort;
             if nargin >= 2
                 %-----**This has to be hard-coded for the time being**-----
-                localHost = 'localHost';
+                localHost = '192.168.174.65';
                 localPort = 9000;
                 %----------------------------------------------------------
                 if nargin == 3
@@ -40,8 +40,8 @@ classdef (Abstract) RemoteAgent < Agent
             else
                 error('Not enough input arguments to create RemoteAgent.')
             end
-            A.socket = udp(localHost,localPort,'LocalHost',...
-                'localHost','LocalPort',A.port,'InputBufferSize',4096);
+            A.socket = udp(localHost,localPort,'LocalPort',...
+                A.port,'InputBufferSize',4096);
             fopen(A.socket);
             fwrite(A.socket,A.type,'uchar');
             fclose(A.socket);
@@ -73,8 +73,8 @@ classdef (Abstract) RemoteAgent < Agent
         % WAITFORAGENT scans all IP broadcasts for an incoming message from
         % the local agent. It calls UPDATESOCKET upon receipt of an
         % incoming message.
-            obj.socket = udp('0.0.0.0','LocalHost','localHost',...
-                'LocalPort',obj.port,'InputBufferSize',8192);
+            obj.socket = udp('0.0.0.0','LocalPort',obj.port,...
+                'InputBufferSize',4096);
             fopen(obj.socket);
             if obj.socket.bytesAvailable > 0
                 updateSocket(obj);
@@ -98,8 +98,8 @@ classdef (Abstract) RemoteAgent < Agent
             fread(obj.socket,obj.socket.bytesAvailable,'uint16');
             fclose(obj.socket);
             delete(obj.socket);
-            obj.socket = udp(localHost,localPort,'LocalHost',...
-                'localHost','LocalPort',obj.port,'InputBufferSize',8192);
+            obj.socket = udp(localHost,localPort,'LocalPort',...
+                obj.port,'InputBufferSize',4096);
             obj.status = true;
             fprintf('Agent is connected to the Image Labeling System.\n')
             start(obj)
