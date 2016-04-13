@@ -12,9 +12,9 @@ scanForAgents(E);
 
 stopScanForAgents(E);
 % E.control.assignment = All(E.control);
-% E.control.assignment = GAP(E.control,1,2);
+E.control.assignment = GAP(E.control,1,2);
 % E.control.assignment = GAP(E.control,1,3);
-E.control.assignment = GAP(E.control,1,4);
+% E.control.assignment = GAP(E.control,1,4);
 E.control.fusion = 'sml';
 
 %% Start experiment
