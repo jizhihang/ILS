@@ -23,6 +23,8 @@ classdef (Abstract) Assignment < handle
         
         function A = Assignment(control,type)
         % ASSIGNMENT is the class constructor for the assignment class.
+        % A is an Assignment
+        
             A.control = control;
             A.type = type;
             A.assignmentMatrix = false(length(A.control.agents),length(A.control.data));
@@ -43,12 +45,12 @@ classdef (Abstract) Assignment < handle
         % numImages) to send image assignments to remote agents.
             if nargin == 2
                 sendImages(obj.control.agents{agent},...
-                    find(obj.assignmentMatrix(agent,:)));
+                    obj.control.data(obj.assignmentMatrix(agent,:)));
             else
                 for i = 1:size(obj.assignmentMatrix,1)
                     if any(obj.assignmentMatrix(i,:))
                         sendImages(obj.control.agents{i},...
-                            find(obj.assignmentMatrix(i,:)));
+                            obj.control.data(obj.assignmentMatrix(i,:)));
                     end
                 end
             end

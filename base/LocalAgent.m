@@ -45,12 +45,14 @@ classdef LocalAgent < Agent
             obj.socket.datagramreceivedfcn = @obj.resultsArrived;
             fwrite(obj.socket,X,'uint16');
         end
+        
         function Y = readResults(obj)
         % READRESULTS will retrieve classification results from the remote
         % agent.
             Y = fread(obj.socket,obj.socket.bytesAvailable,'uint8');
             Y(Y==0) = -1;
         end
+        
         function terminate(obj)
         % TERMINATE sends a command to a remote agent to close and delete
         % the direct interface socket and then does the same for the local
