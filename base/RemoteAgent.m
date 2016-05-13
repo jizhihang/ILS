@@ -133,12 +133,7 @@ classdef (Abstract) RemoteAgent < Agent
         % a vector argument and will return a cell array of images.
             imageQueue = cell(length(index),1);
             for i = 1:length(index)
-%                 imageQueue{i} = imread([int2str(i) '.jpg']);
-                imageQueue{i} = imread([int2str(index(i)) '.jpg']); % I think this is what we want
-%                 imageQueue{i} = imread(obj.imdir(index(i)).name); % <- this way does 
-                    % not work as intended because the dir command sorts
-                    % images alphabetically, and thus they no-longer match
-                    % up with class labels
+                imageQueue{i} = imread(obj.imdir(index(i)).name);
             end
         end
         
