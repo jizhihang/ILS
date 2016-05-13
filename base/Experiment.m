@@ -37,7 +37,7 @@ classdef Experiment < handle
             delete(instrfindall); % delete any existing udp objects
             E.localPort = 9000; % **Hard-coded**
             E.control = Control;
-            E.socket = udp('0.0.0.0','LocalPort',E.localPort,...
+            E.socket = UDP('127.0.0.1','LocalPort',E.localPort,...
                 'InputBufferSize',4096);
             E.gui = experiment_interface(E);
             E.listener = addlistener(E.control,'experimentComplete',...
@@ -163,31 +163,12 @@ classdef Experiment < handle
         % agent requesting to join the network and passes the information
         % to the ADDAGENT function in the control object.
             type = char(fread(obj.socket,obj.socket.bytesAvailable,'uchar'))';
-            uniqueLocalPort = newPort(obj);
             remoteHost = event.Data.DatagramAddress;
             remotePort = event.Data.DatagramPort;
-            addAgent(obj.control,type,uniqueLocalPort,remoteHost,...
+            addAgent(obj.control,type,remoteHost,...
                 remotePort);
         end
-        
-        function P = newPort(obj)
-        % NEWPORT generates an open port on the local server.
-            flag = true;
-            numAgents = length(obj.control.agents);
-            currentPorts = zeros(numAgents+1,1);
-            currentPorts(1) = obj.localPort;
-            for i = 1:numAgents
-                currentPorts(i+1) = obj.control.agents{i}.port;
-            end
-            while flag
-                P = round(1e4*rand);
-                if P < 1000
-                    P = P + 1000;
-                end
-                flag = any(currentPorts==P);
-            end
-        end
-        
+              
         %------------------------------------------------------------------
     end
     

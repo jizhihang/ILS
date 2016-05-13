@@ -17,8 +17,10 @@ classdef LocalAgent < Agent
         %------------------------------------------------------------------
         % Class constructor:
         
-        function A = LocalAgent(type,localPort,remoteHost,remotePort,...
-                ctrl)
+        function A = LocalAgent(type,remoteAgentAddress,remoteAgentPort,...
+                ctrl)        
+%         function A = LocalAgent(type,remoteAgentAddress,remoteAgentPort,...
+%                 ctrl)
         % LOCALAGENT is the class constructor for a local agent. It will
         % create a direct interface object for communication with the
         % remote agent.
@@ -26,12 +28,21 @@ classdef LocalAgent < Agent
             if nargin < 4
                 error('Not enough information to construct HostAgent')
             end
-            A.port = localPort;
-            A.socket = udp(remoteHost,remotePort,'LocalPort'...
-                ,A.port,'InputBufferSize',4096);
+           
+            % By not setting a local port the OS will assign a unique and
+            % unused port that we can bind to.
+            A.socket = UDP(remoteAgentAddress,remoteAgentPort,'InputBufferSize',4096);
             A.control = ctrl;
             fopen(A.socket);
+            
+            %Record LocalAgentPort
+            A.port = A.socket.LocalPort;
+            
             fwrite(A.socket,'LocalAgent: ready','uint16');
+            
+            fprintf('Reading From %u \n', A.port);
+            fprintf('Writing To %u \n', remoteAgentPort);
+            
             fprintf('Added a %s agent to port %u.\n',A.type,A.port)
         end
         
@@ -42,7 +53,7 @@ classdef LocalAgent < Agent
         % SENDIMAGES will send image assignments to the remote agent
         % for classification.
             obj.socket.readasyncmode = 'continuous';
-            obj.socket.datagramreceivedfcn = @obj.resultsArrived;
+            obj.socket.DatagramReceivedFcn = @obj.resultsArrived;
             fwrite(obj.socket,X,'uint16');
         end
         

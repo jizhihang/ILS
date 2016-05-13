@@ -40,12 +40,12 @@ classdef Control < handle
         %------------------------------------------------------------------
         % System-level:
         
-        function addAgent(obj,type,localPort,remoteHost,remotePort)
+        function addAgent(obj,type,remoteHost,remotePort)
         % ADDAGENT will add a local agent to the agents array by calling
         % the class constructor of local agent and update the size of the
         % results field.
             index = length(obj.agents)+1;
-            obj.agents{index} = LocalAgent(type,localPort,remoteHost,...
+            obj.agents{index} = LocalAgent(type,remoteHost,...
                 remotePort,obj);
             obj.results = zeros(length(obj.agents),length(obj.data));
         end

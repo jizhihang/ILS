@@ -14,7 +14,7 @@ classdef (Abstract) RemoteAgent < Agent
         % -----------------------------------------------------------------
         % Class constructor:
         
-        function A = RemoteAgent(type,remotePort,imageDirectory)
+        function A = RemoteAgent(type,imageDirectory)
         % REMOTEAGENT is the class constructor for a remote agent. It will
         % be called on a remote host and broadcast its IP address and port
         % to the machine which is hosting the experiment. Upon establishing
@@ -23,11 +23,11 @@ classdef (Abstract) RemoteAgent < Agent
 %             delete(instrfindall); % delete existing udp objects
             A@Agent(type);
             A.status = false;
-            A.port = remotePort;
             if nargin >= 2
                 %-----**This has to be hard-coded for the time being**-----
-                localHost = '192.168.174.65';
-                localPort = 9000;
+                % TODO change this to a broadcast address.
+                localHost = '127.0.0.1';
+                discoveryPort = 9000;
                 %----------------------------------------------------------
                 if nargin == 3
                     A.imdir = imageDirectory;
@@ -40,15 +40,70 @@ classdef (Abstract) RemoteAgent < Agent
             else
                 error('Not enough input arguments to create RemoteAgent.')
             end
-            A.socket = udp(localHost,localPort,'LocalPort',...
-                A.port,'InputBufferSize',4096);
+            
+            A.socket = UDP(localHost,discoveryPort,'InputBufferSize',4096);
+            
             fopen(A.socket);
+            
+            % get the auto assigned port
+            A.port = A.socket.LocalPort;
+
+            % Send discovery message
             fwrite(A.socket,A.type,'uchar');
-            fclose(A.socket);
-            delete(A.socket);
+            
             waitForAgent(A);
         end
+                
+        %------------------------------------------------------------------
+        % Dependencies:
         
+        function waitForAgent(obj)
+        % WAITFORAGENT scans all IP broadcasts for an incoming message from
+        % the local agent. It calls UPDATESOCKET upon receipt of an
+        % incoming message.
+            
+            if obj.socket.bytesAvailable > 0
+                % Reply message was already received
+                updateSocket(obj);
+            else
+                % Set up reply message handler
+                obj.socket.readasyncmode = 'continuous';
+                obj.socket.DatagramReceivedFcn = @obj.updateSocket;
+            end
+            
+        end
+
+        function updateSocket(obj,src,event)
+        % UPDATESOCKET creates the direct interface connection with the
+        % local agent, sets the status field to true, and starts the remote
+        % agent.
+            % Read to clear datagram received
+            fread(obj.socket,obj.socket.bytesAvailable,'uint16');
+            
+            if nargin > 1
+                localAgentAddress = event.Data.DatagramAddress;
+                localAgentPort = event.Data.DatagramPort;
+            else
+                localAgentAddress = obj.socket.DatagramAddress;
+                localAgentPort = obj.socket.DatagramPort;
+            end           
+            
+            % Configure the remote address to send to for all future 
+            % messages.
+            obj.socket.RemoteHost = localAgentAddress;
+            obj.socket.RemotePort = localAgentPort;
+            
+            % Set the status to true as it is ready to receive command
+            % message.
+            obj.status = true;
+            
+            fprintf('Agent is connected to the Image Labeling System.\n')
+            
+            % call start to set up the message handling for the tuntime 
+            % message
+            start(obj)
+        end
+                
         %------------------------------------------------------------------
         % System-level:
         
@@ -57,52 +112,13 @@ classdef (Abstract) RemoteAgent < Agent
         % receive image assignments. It should be called after first
         % establishing a direct interface with the local agent.
             if obj.status
-                fopen(obj.socket);
+%                 fopen(obj.socket);
                 obj.socket.readasyncmode = 'continuous';
-                obj.socket.datagramreceivedfcn = @obj.classifyImages;
+                obj.socket.DatagramReceivedFcn = @obj.classifyImages;
             else
                 warning('Remote agent is not connected to local agent.')
                 return
             end
-        end
-        
-        %------------------------------------------------------------------
-        % Dependencies:
-        
-        function waitForAgent(obj)
-        % WAITFORAGENT scans all IP broadcasts for an incoming message from
-        % the local agent. It calls UPDATESOCKET upon receipt of an
-        % incoming message.
-            obj.socket = udp('0.0.0.0','LocalPort',obj.port,...
-                'InputBufferSize',4096);
-            fopen(obj.socket);
-            if obj.socket.bytesAvailable > 0
-                updateSocket(obj);
-                return
-            end
-            obj.socket.readasyncmode = 'continuous';
-            obj.socket.datagramreceivedfcn = @obj.updateSocket;
-        end
-        
-        function updateSocket(obj,src,event)
-        % UPDATESOCKET creates the direct interface connection with the
-        % local agent, sets the status field to true, and starts the remote
-        % agent.
-            if nargin > 1
-                localHost = event.Data.DatagramAddress;
-                localPort = event.Data.DatagramPort;
-            else
-                localHost = obj.socket.DatagramAddress;
-                localPort = obj.socket.DatagramPort;
-            end
-            fread(obj.socket,obj.socket.bytesAvailable,'uint16');
-            fclose(obj.socket);
-            delete(obj.socket);
-            obj.socket = udp(localHost,localPort,'LocalPort',...
-                obj.port,'InputBufferSize',4096);
-            obj.status = true;
-            fprintf('Agent is connected to the Image Labeling System.\n')
-            start(obj)
         end
         
         function terminate(obj)
