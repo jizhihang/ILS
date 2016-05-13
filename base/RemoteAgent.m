@@ -26,7 +26,7 @@ classdef (Abstract) RemoteAgent < Agent
             if nargin >= 2
                 %-----**This has to be hard-coded for the time being**-----
                 % TODO change this to a broadcast address.
-                localHost = '127.0.0.1';
+                localHost = '127.0.0.1'; %We should be able to use 0.0.0.0 now.
                 discoveryPort = 9000;
                 %----------------------------------------------------------
                 if nargin == 3
