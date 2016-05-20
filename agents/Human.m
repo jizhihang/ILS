@@ -16,13 +16,13 @@ classdef Human < RemoteAgent
         % -----------------------------------------------------------------
         % Class constructor:
         
-        function A = Human(remotePort,imageDirectory)
+        function A = Human(imageDirectory)
         % HUMAN is the class constructor for the Human remote agent. It
         % initializes an empty GUI, response, and iteration listener.
             if nargin < 1
                 error('Too few parameters for class construction.');
             end
-            A@RemoteAgent('human',remotePort,imageDirectory);
+            A@RemoteAgent('human',imageDirectory);
             A.gui = [];
             A.response = [];
             A.iterationListener = addlistener(A,'iterationComplete',...

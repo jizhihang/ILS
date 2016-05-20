@@ -12,7 +12,7 @@ classdef ComputerVision < RemoteAgent
         % -----------------------------------------------------------------
         % Class constructor:
         
-        function A = ComputerVision(remotePort,imageDirectory)
+        function A = ComputerVision(imageDirectory)
             if nargin < 1
                 error('Too few parameters for class construction.');
             end

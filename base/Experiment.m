@@ -76,7 +76,8 @@ classdef Experiment < matlab.mixin.SetGet & handle
             E.gui = experiment_interface(E);  
                        
             delete(instrfindall); % delete any existing udp objects
-            E.socket = udp('127.0.0.1','LocalPort',E.LocalPort,...
+            % Create UDP discovery socket.
+            E.socket = UDP('0.0.0.0','LocalPort',E.LocalPort,...
                 'InputBufferSize',4096);
             
         end

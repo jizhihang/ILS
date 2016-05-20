@@ -26,7 +26,7 @@ classdef (Abstract) RemoteAgent < Agent
             if nargin >= 2
                 %-----**This has to be hard-coded for the time being**-----
                 % TODO change this to a broadcast address.
-                localHost = '127.0.0.1'; %We should be able to use 0.0.0.0 now.
+                discoveryHost = '255.255.255.255'; %We should be able to use 0.0.0.0 now.
                 discoveryPort = 9000;
                 %----------------------------------------------------------
                 if nargin == 3
@@ -41,43 +41,31 @@ classdef (Abstract) RemoteAgent < Agent
                 error('Not enough input arguments to create RemoteAgent.')
             end
             
-            A.socket = UDP(localHost,discoveryPort,'InputBufferSize',4096);
+            A.socket = UDP(discoveryHost, discoveryPort,'InputBufferSize',4096);
             
             fopen(A.socket);
             
             % get the auto assigned port
             A.port = A.socket.LocalPort;
-
-            % Send discovery message
-            fwrite(A.socket,A.type,'uchar');
             
-            waitForAgent(A);
+            % Set up reply message handler
+            A.socket.readasyncmode = 'continuous';
+            A.socket.DatagramReceivedFcn = @A.updateSocket;
+            
+            % Send discovery message
+            fwrite(A.socket,A.type,'char');
+            
         end
                 
         %------------------------------------------------------------------
         % Dependencies:
-        
-        function waitForAgent(obj)
-        % WAITFORAGENT scans all IP broadcasts for an incoming message from
-        % the local agent. It calls UPDATESOCKET upon receipt of an
-        % incoming message.
-            
-            if obj.socket.bytesAvailable > 0
-                % Reply message was already received
-                updateSocket(obj);
-            else
-                % Set up reply message handler
-                obj.socket.readasyncmode = 'continuous';
-                obj.socket.DatagramReceivedFcn = @obj.updateSocket;
-            end
-            
-        end
 
         function updateSocket(obj,src,event)
         % UPDATESOCKET creates the direct interface connection with the
         % local agent, sets the status field to true, and starts the remote
         % agent.
             % Read to clear datagram received
+            disp('update socket')
             fread(obj.socket,obj.socket.bytesAvailable,'uint16');
             
             if nargin > 1
