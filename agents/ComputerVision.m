@@ -77,6 +77,10 @@ classdef ComputerVision < RemoteAgent
 
             for i=1:length(Images)
                 Im = single(Images{i}); % convert to single
+                
+                sizeTuple = py.tuple({net.normalization.imageSize(1:2)})
+                
+                Im = py.cv2.resize(Im,sizeTuple
                 Im = imresize(Im, net.normalization.imageSize(1:2)); % re-size
                 Im = Im - net.normalization.averageImage; % subtract mean
 %                 imGpu = gpuArray(Im);

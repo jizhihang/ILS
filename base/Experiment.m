@@ -1,13 +1,13 @@
-classdef Experiment < handle
+classdef Experiment < matlab.mixin.SetGet & handle
 % EXPERIMENT creates the environment in which the experiment takes place.
 % It will run the experimenter interface, track metrics, establish
 % communication with remote agents, and initialize the control.
     
     properties
-        imdir % Directory of image database
+        Imdir % Directory of image database
+        LocalPort % Permanent port of local control
         gui % GUI handle
         control % Control object
-        localPort % Permanent port of local control
         socket % Direct interface socket of local control
         listener % Listens for end of experiment notification
         elapsedTime % Elapsed time of experiment
@@ -27,43 +27,63 @@ classdef Experiment < handle
         %------------------------------------------------------------------
         % Class constructor:
         
-        function E = Experiment(X,Y,imageDirectory)
+        function E = Experiment(X,Y,varargin)
         % EXPERIMENT is the class constructor which will set the data and
         % label properties (not necessary), instantiate a control object,
         % open a GUI, and scan for agents.
+        %    EXPERIMENT(X)
+        %    EXPERIMENT(X, Y)
+        %    EXPERIMENT(X, Y, imageDirectory)
+        %    EXPERIMENT(X, Y, P1, V1, ..., PN, VN)
+        
             if nargin < 1
                 error('Not enough arguments to start an experiment');
             end
-            delete(instrfindall); % delete any existing udp objects
-            E.localPort = 9000; % **Hard-coded**
-            E.control = Control;
-            E.socket = UDP('127.0.0.1','LocalPort',E.localPort,...
-                'InputBufferSize',4096);
-            E.gui = experiment_interface(E);
-            E.listener = addlistener(E.control,'experimentComplete',...
-                @E.endExperiment);
-            addData(E.control,X);
-            E.numImages = length(X);
+            
+            % Set Property defaults
+            E.LocalPort = 9000; % **Hard-coded**
+            E.Imdir = [];
+          
+            % Property defaults
+            E.labels = [];
+            E.assignmentStats = [];
+            E.intervalStats = [];
+            E.imageStats = [];      
             E.elapsedTime = 0;
             E.balAcc = 0;
             E.testCounter = 0;
+            
+            % finish setting up the properties with the set command
             if nargin > 1
                 E.labels = Y(:);
                 if nargin == 3
-                    E.imdir = dir(imageDirectory);
-                    E.imdir = E.imdir(3:end);
+                    E.Imdir = dir(varargin);
+                    E.Imdir = E.Imdir(3:end);
+                elseif(nargin > 3)
+                    set(E, varargin{1:end});
                 end
-            else
-                E.labels = [];
             end
-            E.assignmentStats = [];
-            E.intervalStats = [];
-            E.imageStats = [];
+            
+            
+            E.control = Control();
+            addData(E.control,X);
+            E.numImages = length(X);
+            % create the other object
+            E.listener = addlistener(E.control,'experimentComplete',...
+                @E.endExperiment);
+
+           
+            E.gui = experiment_interface(E);  
+                       
+            delete(instrfindall); % delete any existing udp objects
+            E.socket = udp('127.0.0.1','LocalPort',E.LocalPort,...
+                'InputBufferSize',4096);
+            
         end
         
         %------------------------------------------------------------------
         % System-level:
-        
+ 
         function scanForAgents(obj)
         % SCANFORAGENTS scans direct interface communication from any IP
         % address and port. It will open the socket and await messages from
@@ -81,45 +101,6 @@ classdef Experiment < handle
             for i = 1:length(obj.control.agents)
                 fwrite(obj.control.agents{i}.socket,'test','uint16');
             end
-        end
-        
-        function autoRun(obj,varargin)
-        % AUTOSTART provides a command line call to start the experiment.
-            persistent endCount
-            if nargin < 3
-                close(obj.gui);
-                endCount = varargin{1};
-                obj.elapsedTime = zeros(endCount,1);
-                obj.balAcc = zeros(endCount,1);
-                delete(obj.listener);
-                obj.assignmentStats = cell(endCount,1);
-                obj.intervalStats = cell(endCount,1);
-                obj.imageStats = zeros(endCount,length(obj.control.data));
-                obj.listener = addlistener(obj.control,...
-                    'experimentComplete',@obj.autoRun);
-            else
-                obj.testCounter = obj.testCounter + 1;
-                [~,imageConfidence,~] = sml(obj.control.results);
-                obj.imageStats(obj.testCounter,:) = reshape(abs(imageConfidence),1,[]);
-                if strcmp(obj.control.assignment.type,'gap')
-                    obj.assignmentStats{obj.testCounter} = obj.control.assignment.newAssignments;
-                    obj.intervalStats{obj.testCounter} = obj.control.assignment.iterationInterval;
-                end
-                if obj.testCounter == endCount
-                    endExperiment(obj);
-                    return
-                else
-                    obj.elapsedTime(obj.testCounter) = toc;
-                    obj.balAcc(obj.testCounter) = balancedAccuracy(...
-                        obj.control.labels,obj.labels);
-                    [obj.testCounter,obj.elapsedTime(obj.testCounter),...
-                        obj.balAcc(obj.testCounter)]
-                end
-            end
-            obj.control.results(:) = 0;
-            resetAssignment(obj.control.assignment);
-            tic;
-            notify(obj.control,'beginExperiment');
         end
         
         function endExperiment(obj,src,event)
@@ -170,6 +151,25 @@ classdef Experiment < handle
         end
               
         %------------------------------------------------------------------
+    end
+    
+    methods
+        function set.LocalPort(obj, val)
+            obj.LocalPort = val;
+        end
+        
+        function set.Imdir(obj, val)
+        % SET.IMDIR val is the Directory name and will convert it to a 
+        % directory array
+            if(~isempty(val))
+               obj.Imdir = dir(val);
+               obj.Imdir = obj.Imdir(3:end);
+            else 
+                obj.Imdir = [];
+            end
+            
+        end
+        
     end
     
 end
