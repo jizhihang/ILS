@@ -1,11 +1,12 @@
-classdef ArpiExperiment < Experiment % handle
+classdef ArpiExperiment <  % handle
     %ARPIEXPERIMENT Summary of this class goes here
     %   Detailed explanation goes here
     
     properties
         numOfAgentsNeeded = 0;
         numOfAgentsConnected = 0;
-        arpiNetwork;
+        network;
+        myExperiment;
     end
     
     methods
@@ -23,11 +24,13 @@ classdef ArpiExperiment < Experiment % handle
             obj@Experiment([],[],'LocalPort',port);
 %             % TODO Connect to the ARPI network with what paul is working
 %             % on
-%             obj.arpiNetwork = ArpiNetwork();
-%             
-%             obj.arpiNetwork.
-%             
-%             obj.arpiNetwork.joinNetwork();
+            obj.network = ARPINetwork();
+                                     
+            addlistener(obj.network, 'NewUserJoinedEvent', @obj.NewUserJoinedEventHandler);
+            addlistener(obj.network, 'UserConnectedEvent', @obj.UserConnectedEventHandler);
+            addlistener(obj.network, 'MessageReceivedEvent', @obj.MessageReceivedEventHandler);
+
+            obj.network.JoinNetwork(15, ARPINetwork.MakeUID(0, 0));
             
         end
         
@@ -122,6 +125,46 @@ classdef ArpiExperiment < Experiment % handle
             
             %TODO CHECK IF ALL AGENTS HAVE BEEN FOUND
             obj.numOfConnectedAgents = obj.numOfConnectedAgents + 1;
+        end
+        %% Network Functions
+        
+        function NewUserJoinedEventHandler(obj, src, eventData)
+            disp('Mike NewUserJoinedEventHandler');
+            disp(eventData);
+            
+        end
+        
+        function UserConnectedEventHandler(obj, src, eventData)
+            disp('Mike UserConnectedEventHandler');
+            disp(eventData);
+                        
+            src.Subscribe(src.EventData.EventSourceUID, ARPINetwork.ACMPGetMode); %ACMPGetMode
+            src.Subscribe(src.EventData.EventSourceUID, ARPINetwork.ACMPSetMode); %ACMPSetMode
+            src.Subscribe(src.EventData.EventSourceUID, ARPINetwork.ACMPNotifyMode); %ACMPNotifyMode
+            src.Subscribe(src.EventData.EventSourceUID, ARPINetwork.SETILSPARAMETERS); %ACMPNotifyMode
+
+        end
+        
+        function handleClassificationILSSetup(obj, message)
+            disp(message)
+        end
+        
+        function MessageReceivedEventHandler(obj, src, eventData)
+            disp('Mike MessageReceivedEventHandler');
+            
+            switch(eventData.MessageID)
+                case ARPINetwork.ACMPGetMode
+                    disp('ACMPGetMode Event');
+                case ARPINetwork.ACMPSetMode
+                    disp('ACMPSetMode Event');
+                case ARPINetwork.ACMPNotifyMode
+                    disp('ACMPNotifyMode Esavent');                                    
+                case ARPINetwork.ClassificationILSSetup
+                    disp('Received ClassificationILSSetup Message');
+                    obj.handleClassificationILSSetup(eventData)
+                otherwise
+                    disp('Unknown Event');
+            end
         end
     end
 end

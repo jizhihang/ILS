@@ -147,6 +147,10 @@ classdef Experiment < matlab.mixin.SetGet & handle
             type = char(fread(obj.socket,obj.socket.bytesAvailable,'uchar'))';
             remoteHost = event.Data.DatagramAddress;
             remotePort = event.Data.DatagramPort;
+            createLocalAgentHere(type, remoteHost, remotePort);
+        end
+        
+        function createLocalAgentHere(obj, type, address, port)
             addAgent(obj.control,type,remoteHost,...
                 remotePort);
         end

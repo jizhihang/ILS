@@ -46,7 +46,7 @@ classdef Control < handle
         % results field.
             index = length(obj.agents)+1;
             obj.agents{index} = LocalAgent(type,remoteHost,...
-                remotePort,obj);
+                remotePort);
             obj.results = zeros(length(obj.agents),length(obj.data));
         end
         

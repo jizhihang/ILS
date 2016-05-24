@@ -6,7 +6,6 @@ classdef LocalAgent < Agent
     properties
         socket % Direct interface connection with remote agent
         port % Local port for direct interface connection
-        control % Associated control object
     end
     
     events
@@ -17,8 +16,7 @@ classdef LocalAgent < Agent
         %------------------------------------------------------------------
         % Class constructor:
         
-        function A = LocalAgent(type,remoteAgentAddress,remoteAgentPort,...
-                ctrl)        
+        function A = LocalAgent(type,remoteAgentAddress,remoteAgentPort)        
 %         function A = LocalAgent(type,remoteAgentAddress,remoteAgentPort,...
 %                 ctrl)
         % LOCALAGENT is the class constructor for a local agent. It will
@@ -32,7 +30,6 @@ classdef LocalAgent < Agent
             % By not setting a local port the OS will assign a unique and
             % unused port that we can bind to.
             A.socket = UDP(remoteAgentAddress,remoteAgentPort,'InputBufferSize',4096);
-            A.control = ctrl;
             fopen(A.socket);
             
             %Record LocalAgentPort
