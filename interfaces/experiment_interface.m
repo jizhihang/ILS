@@ -53,7 +53,7 @@ function gui = experiment_interface(experiment)
     function startButton_callback(~,~) 
     % STARTBUTTON_CALLBACK starts the experiment
         tic;
-        notify(experiment.control,'beginExperiment');
+        beginExperiment(experiment);
         infoText.String = 'Experiment Started.';
     end
 
@@ -96,7 +96,7 @@ function gui = experiment_interface(experiment)
                     editBox.Visible = 'on';
                 case 'all'
                     Assignment = str{val};
-                    changeAssignment(experiment.control,str{val});
+                    changeAssignment(experiment.control, str{val});
                 otherwise
                     return
             end
@@ -184,7 +184,7 @@ function gui = experiment_interface(experiment)
         str = source.String;
         val = source.Value;
         if ~isempty(str{val})
-            experiment.control.fusion = str{val};
+            experiment.setFusion(str{val});
         end
         infoText.String = 'Experiment Ready. Select "Start".';
     end

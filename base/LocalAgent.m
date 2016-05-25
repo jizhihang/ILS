@@ -23,7 +23,7 @@ classdef LocalAgent < Agent
         % create a direct interface object for communication with the
         % remote agent.
             A@Agent(type);
-            if nargin < 4
+            if nargin < 3
                 error('Not enough information to construct HostAgent')
             end
            

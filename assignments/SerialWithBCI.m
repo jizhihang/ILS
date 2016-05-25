@@ -35,20 +35,20 @@ classdef SerialWithBCI < Assignment
         %------------------------------------------------------------------
         % Class constructor:
         
-        function A = SerialWithBCI(control,batch,policy_human,policy_bci)
+        function A = SerialWithBCI(agents, data,batch,policy_human,policy_bci)
         % SERIALWITH is the class constructor for assignment type serial.
         % It calls the superclass constructor of Assignment and initializes
         % all necessary properties and listeners.
-            A@Assignment(control,'serial_bci');
+            A@Assignment(agents, data, 'serial_bci');
             A.batchSize = batch;
             A.policy_human = policy_human;
             A.policy_bci = policy_bci;
-            for i = 1:length(control.agents)
-                if strcmp(control.agents{i}.type,'cv')
+            for i = 1:length(A.agents)
+                if strcmp(A.agents{i}.type,'cv')
                     A.cvIndex = i;
-                elseif strcmp(control.agents{i}.type,'rsvp')
+                elseif strcmp(A.agents{i}.type,'rsvp')
                     A.bciIndex = i;
-                elseif strcmp(control.agents{i}.type,'human')
+                elseif strcmp(A.agents{i}.type,'human')
                     A.humanIndex = i;
                 else
                     error('Only human, BCI, and CV agents can be used in Serial with BCI.')
@@ -64,10 +64,10 @@ classdef SerialWithBCI < Assignment
                 @A.handleAssignment);
             A.humanAssignment = 0;
             A.humanAssignmentMax = 0;
-            A.humanAssignmentTracker = zeros(length(A.control.data),1);
+            A.humanAssignmentTracker = zeros(length(A.data),1);
             A.bciAssignment = 0;
             A.bciAssignmentMax = 0;
-            A.bciAssignmentTracker = zeros(length(A.control.data),1);
+            A.bciAssignmentTracker = zeros(length(A.data),1);
             A.finalHumanIteration = false;
             A.finalBCIIteration = false;
             A.finalCVIteration = false;
@@ -118,7 +118,7 @@ classdef SerialWithBCI < Assignment
             fprintf('Results received from %s.\n',src.type);
             if strcmp(src.type,'rsvp')
                 results = readResults(src)';
-                obj.control.results(obj.bciIndex,...
+                obj.results(obj.bciIndex,...
                     obj.assignmentMatrix(obj.bciIndex,:)) = results;
                 newAssignment = getAssignment(obj,'human',results);
                 if any(newAssignment)
@@ -133,21 +133,21 @@ classdef SerialWithBCI < Assignment
                         obj.finalHumanIteration = true;
                     end
                 elseif obj.finalBCIIteration
-                    notify(obj.control,'experimentComplete');
+                    raiseAssignmentCompleteEvent(obj)
                 end
             elseif strcmp(src.type,'human')
                 obj.humanAssignment = obj.humanAssignment + 1;
-                obj.control.results(obj.humanIndex,...
+                obj.results(obj.humanIndex,...
                     obj.humanAssignmentTracker==obj.humanAssignment)...
                     = readResults(src)';
                 if obj.humanAssignment == obj.humanAssignmentMax
                     if obj.finalHumanIteration
-                        notify(obj.control,'experimentComplete');
+                        raiseAssignmentCompleteEvent(obj)
                     end
                 end
             elseif strcmp(src.type,'cv')
                 results = readResults(src)';
-                obj.control.results(obj.cvIndex,...
+                obj.results(obj.cvIndex,...
                     obj.assignmentMatrix(obj.cvIndex,:)) = results;
                 newAssignment = getAssignment(obj,'bci',results);
                 if any(newAssignment)
@@ -162,10 +162,14 @@ classdef SerialWithBCI < Assignment
                         obj.finalBCIIteration = true;
                     end
                 elseif obj.finalCVIteration
-                    notify(obj.control,'experimentComplete');
+                    raiseAssignmentCompleteEvent(obj)
                 end
                 notify(obj,'iterationComplete');
             end
+            
+            % Notify the control that it can grab the results
+            raiseAssignmentResultsUpdateEvent(obj)
+            
         end
         function terminate(obj)
         % TERMINATE will delete all listeners in the assignment

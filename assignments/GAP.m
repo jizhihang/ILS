@@ -33,21 +33,21 @@ classdef GAP < Assignment
         %------------------------------------------------------------------
         % Class constructor:
         
-        function A = GAP(control,iterationInterval,confThreshold)
+        function A = GAP(agents, data,iterationInterval,confThreshold)
         % ALL is the class constructor for assignment type all. It calls
         % the superclass constructor of assignment and adds a iteration
         % listener.
-            A@Assignment(control,'gap');
+            A@Assignment(agents, data, 'gap');
             A.iterationListener = addlistener(A,'iterationComplete',...
                 @A.handleAssignment);
-            A.agentIndex = false(length(control.agents),1);
+            A.agentIndex = false(length(A.agents),1);
             A.iterationStatus = A.agentIndex;
             A.value = ones(size(A.assignmentMatrix));
             A.cost = ones(size(A.agentIndex));
             A.agentCost = A.cost;
             A.originalInterval = iterationInterval;
-            for i = 1:length(A.control.agents)
-                switch control.agents{i}.type
+            for i = 1:length(A.agents)
+                switch A.agents{i}.type
                     case 'cv'
                         A.agentCost(i) = 1e-2;
                     case 'rsvp'
@@ -58,7 +58,7 @@ classdef GAP < Assignment
             end
             A.budget = A.originalInterval./A.agentCost;
             A.agentReliability = zeros(size(A.cost));
-            A.imageConfidence = zeros(length(control.data),1);
+            A.imageConfidence = zeros(length(A.data),1);
             A.imageCompletion = false(size(A.imageConfidence));
             A.threshold = confThreshold;
             A.newAssignments = [];
@@ -76,7 +76,7 @@ classdef GAP < Assignment
                 case 'iterationComplete'
                     getAssignment(obj);
                 case 'beginExperiment'
-                    numAgents = length(obj.control.agents);
+                    numAgents = length(obj.agents);
                     numImages = numAgents*(numAgents+1);
                     numImages = min(numImages,size(obj.assignmentMatrix,2));
                     initAssignment = randperm(length(obj.imageCompletion));
@@ -92,14 +92,16 @@ classdef GAP < Assignment
                     assignImages(obj);
             end
         end
+
         function handleResults(obj,src,event)
         % HANDLERESULTS populates the results table in control as results
         % are ready. When all results are returned, it calls
         % handleAssignment.
-            for i = 1:length(obj.control.agents)
-                obj.agentIndex(i) = eq(obj.control.agents{i},src);
+            for i = 1:length(obj.agents)
+                obj.agentIndex(i) = eq(obj.agents{i},src);
             end
-            obj.control.results(obj.agentIndex,obj.assignmentMatrix(obj.agentIndex,:))...
+
+            obj.results(obj.agentIndex,obj.assignmentMatrix(obj.agentIndex,:))...
                 = readResults(src)';
             obj.iterationStatus(obj.agentIndex) = true;
             fprintf('Results received from Agent %u.\n',...
@@ -109,12 +111,18 @@ classdef GAP < Assignment
                 notify(obj,'iterationComplete');
                 return
             end
+
+            % Notify the control that it can grab the results
+            raiseAssignmentResultsUpdateEvent(obj);
+
         end
+
         function terminate(obj)
         % TERMINATE will delete all listeners in the assignment
             delete(obj.iterationListener);
             terminate@Assignment(obj);
         end
+
         function resetAssignment(obj)
         % RESETASSIGNMENT will return assignment to initial state for a
         % follow-on experiment
@@ -136,13 +144,13 @@ classdef GAP < Assignment
         function getAssignment(obj)
         % GETASSIGNMENT uses the GAP formulation to generate a new
         % assignmentMatrix.
-            [~,score,obj.agentReliability] = sml(obj.control.results);
+            [~,score,obj.agentReliability] = sml(obj.results);
             obj.imageConfidence(~obj.imageCompletion) = abs(score(~obj.imageCompletion));
             temp = obj.imageCompletion(~obj.imageCompletion);
             temp(obj.imageConfidence(~obj.imageCompletion)>=obj.threshold) = true;
             obj.imageCompletion(~obj.imageCompletion) = temp;
             if all(obj.imageCompletion)
-                notify(obj.control,'experimentComplete');
+                raiseAssignmentCompleteEvent(obj);
                 return
             end
             temp = max(obj.imageConfidence) + repmat(obj.agentReliability,1,size(obj.value,2))...
@@ -153,11 +161,11 @@ classdef GAP < Assignment
             temp(obj.value==0) = 0;
             obj.value = temp;
             if all(obj.value(:,~obj.imageCompletion)==0)
-                notify(obj.control,'experimentComplete');
+                raiseAssignmentCompleteEvent(obj);
                 return
             end
             if ~setBudget(obj)
-                notify(obj.control,'experimentComplete');
+                raiseAssignmentCompleteEvent(obj);
                 return
             end
             [v,Aineq,bineq,Aeq,beq] = convertProblem(...
@@ -177,7 +185,7 @@ classdef GAP < Assignment
                     reshape(tempAssign,length(obj.budget),[])==1;
             catch
                 warning('Problem has no feasible solutions.');
-                notify(obj.control,'experimentComplete');
+                raiseAssignmentCompleteEvent(obj);
                 return
             end
             for i = 1:length(obj.agentIndex)
@@ -188,6 +196,7 @@ classdef GAP < Assignment
             obj.newAssignments(end+1) = sum(obj.assignmentMatrix(:));
             assignImages(obj);
         end
+
         function flag = setBudget(obj)
         % SETBUDGET dynamically sets the iteration interval to
         % ensure that each image can be assigned

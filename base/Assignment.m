@@ -10,30 +10,39 @@ classdef (Abstract) Assignment < handle
 % event, etc.)
     
     properties
-        control % Associated control object
+        agents % list of agents that will be responsible for
+        data % list of images to be assigned to the agents
         type % Assignment type (options): 'gap', 'all', 'serial','serial_bci'
         assignmentMatrix % boolean matrix which controls assignments to agents
-        resultsListener % Listener for resultsReady event
-        beginExperimentListener % Listener for beginExperiment
+        results;
+        resultsListener % Listener for resultsReady event from agents
+    end
+    
+    events 
+        AssignmentResultsUpdateEvent;
+        AssignmentCompleteEvent;
     end
     
     methods
         %------------------------------------------------------------------
         % Class constructor:
         
-        function A = Assignment(control,type)
+        function A = Assignment(agents, data, type)
         % ASSIGNMENT is the class constructor for the assignment class.
         % A is an Assignment
-        
-            A.control = control;
+        % AGENTS - a list of agents that will be responsible for
+        % classifying that assigned images
+        % DATA - list of images to be assigned to the agents
+        % TYPE - type specifying what the assignment algorithm is
+            A.agents = agents;
+            A.data = data;
+
             A.type = type;
-            A.assignmentMatrix = false(length(A.control.agents),length(A.control.data));
-            A.beginExperimentListener = addlistener(control,...
-                'beginExperiment',@A.handleAssignment);
-            A.resultsListener = cell(length(A.control.agents),1);
-            for i = 1:length(A.control.agents)
+            A.assignmentMatrix = false(length(A.agents),length(A.data));
+            A.resultsListener = cell(length(A.agents),1);
+            for i = 1:length(A.agents)
                 A.resultsListener{i} = addlistener(...
-                    A.control.agents{i},'resultsReady',@A.handleResults);
+                    A.agents{i},'resultsReady',@A.handleResults);
             end
         end
         
@@ -44,13 +53,13 @@ classdef (Abstract) Assignment < handle
         % ASSIGNIMAGES uses an assignmentmatrix (boolean numAgents x
         % numImages) to send image assignments to remote agents.
             if nargin == 2
-                sendImages(obj.control.agents{agent},...
-                    obj.control.data(obj.assignmentMatrix(agent,:)));
+                sendImages(obj.agents{agent},...
+                    obj.data(obj.assignmentMatrix(agent,:)));
             else
                 for i = 1:size(obj.assignmentMatrix,1)
                     if any(obj.assignmentMatrix(i,:))
-                        sendImages(obj.control.agents{i},...
-                            obj.control.data(obj.assignmentMatrix(i,:)));
+                        sendImages(obj.agents{i},...
+                            obj.data(obj.assignmentMatrix(i,:)));
                     end
                 end
             end
@@ -61,14 +70,23 @@ classdef (Abstract) Assignment < handle
         
         function terminate(obj)
         % TERMINATE will delete all listeners in the assignment
-            delete(obj.beginExperimentListener);
-            for i = 1:length(obj.control.agents)
+            for i = 1:length(obj.agents)
                 delete(obj.resultsListener{i});
             end
         end
         
         %------------------------------------------------------------------
+
+        function raiseAssignmentResultsUpdateEvent(obj)
+            notify(obj, 'AssignmentResultsUpdateEvent');
+        end
+
+        function raiseAssignmentCompleteEvent(obj)
+            notify(obj, 'AssignmentCompleteEvent');
+        end
+
     end
+    
     
     methods (Abstract)
         %------------------------------------------------------------------

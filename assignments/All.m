@@ -17,15 +17,15 @@ classdef All < Assignment
         %------------------------------------------------------------------
         % Class constructor:
         
-        function A = All(control,batchSize)
+        function A = All(agents, data, batchSize)
         % ALL is the class constructor for assignment type all. It calls
         % the superclass constructor of assignment and adds a iteration
         % listener.
-            A@Assignment(control,'all');
+            A@Assignment(agents, data, 'all');
 %             A.iterationListener = addlistener(A,'iterationComplete',...
 %                 @A.handleAssignment);
-            A.agentIndex = false(length(control.agents),1);
-            if nargin > 1
+            A.agentIndex = false(length(A.agents),1);
+            if nargin > 2
                 A.batchSize = batchSize;
             else
                 A.batchSize = min(size(A.assignmentMatrix,2),256);
@@ -51,26 +51,27 @@ classdef All < Assignment
                 error('handleAssignment should not be called from within All.');
             end
         end
+        
         function handleResults(obj,src,event)
         % HANDLERESULTS populates the results table in control as results
         % are ready. When all results are returned, it calls
         % handleAssignment.
-            for i = 1:length(obj.control.agents)
-                obj.agentIndex(i) = eq(obj.control.agents{i},src);
+            for i = 1:length(obj.agents)
+                obj.agentIndex(i) = eq(obj.agents{i},src);
             end
             currentBatch = find(obj.iterationStatus(obj.agentIndex,:)==false,1,'first');
             if currentBatch == size(obj.iterationStatus,2)
-                obj.control.results(obj.agentIndex,...
+                obj.results(obj.agentIndex,...
                     ((currentBatch-1)*obj.batchSize+1):end) = readResults(src)';
             else
-                obj.control.results(obj.agentIndex,...
+                obj.results(obj.agentIndex,...
                     ((currentBatch-1)*obj.batchSize+1):(currentBatch*obj.batchSize))...
                     = readResults(src)';
             end
             obj.iterationStatus(obj.agentIndex,currentBatch) = true;
             fprintf('Results received from Agent %u.\n',find(obj.agentIndex));
             if all(obj.iterationStatus(:))
-                notify(obj.control,'experimentComplete');
+                obj.raiseAssignmentCompleteEvent();
                 return
             elseif all(obj.iterationStatus(obj.agentIndex,:))
                 return % Wait for the other agents to finish
@@ -86,6 +87,10 @@ classdef All < Assignment
                 end
                 assignImages(obj,find(obj.agentIndex));
             end
+            
+            % Notify the control that it can grab the results
+            obj.raiseAssignmentResultsUpdateEvent();
+            
         end
 %         function terminate(obj)
 %         % TERMINATE will delete all listeners in the assignment

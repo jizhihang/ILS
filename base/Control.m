@@ -11,6 +11,8 @@ classdef Control < handle
         assignment % Assignment type (options): 'random', 'gap', 'all', 'serial'
         fusion % Fusion type (options): 'sum', 'sml', 'mv', 'overwrite'
         results % Table of classification results (numAgents x numTrials)
+        assignmentResultsReadyListener;
+        assignmentCompleteListener;
     end
     
     properties (Dependent)
@@ -18,8 +20,8 @@ classdef Control < handle
     end
     
     events
-        experimentComplete % Event which triggers the end of experiment
-        beginExperiment % starts the experiment
+        ExperimentCompleteEvent % Event which triggers the end of experiment
+        FusionUpdateEvent
     end
     
     methods
@@ -35,22 +37,29 @@ classdef Control < handle
             C.data = [];
             C.agents = cell(0);
             C.results = [];
+            C.assignmentResultsReadyListener = [];
+            C.assignmentCompleteListener = [];
         end
         
         %------------------------------------------------------------------
         % System-level:
         
-        function addAgent(obj,type,remoteHost,remotePort)
+        function beginExperiment(obj)
+            % TODO change assignment to have a void function.
+            event.EventName = 'beginExperiment';
+            obj.assignment.handleAssignment(obj, event);
+        end
+        
+        function addAgent(obj, localAgent)
         % ADDAGENT will add a local agent to the agents array by calling
         % the class constructor of local agent and update the size of the
         % results field.
-            index = length(obj.agents)+1;
-            obj.agents{index} = LocalAgent(type,remoteHost,...
-                remotePort);
+            index = length(obj.agents) + 1;
+            obj.agents{index} = localAgent;
             obj.results = zeros(length(obj.agents),length(obj.data));
         end
         
-        function addData(obj,newData)
+        function addData(obj, newData)
         % ADDDATA will add data to control and update the size of the
         % results field.
             obj.data = [obj.data;newData(:)];
@@ -59,39 +68,72 @@ classdef Control < handle
         
         function changeAssignment(obj,assignmentType,varargin)
         % CHANGEASSIGNMENT updates the assignment object property
+        % Factory method for setting an assignment.
+            if ~isempty(obj.assignmentResultsReadyListener)
+                delete(obj.assignmentResultsReadyListener);
+                obj.assignmentResultsReadyListener = [];
+            end
+            if ~isempty(obj.assignmentCompleteListener)
+                delete(obj.assignmentCompleteListener);
+                obj.assignmentCompleteListener = [];
+            end
             if ~isempty(obj.assignment)
                 terminate(obj.assignment);
             end
             switch assignmentType
                 case 'all'
-                    obj.assignment = All(obj);
+                    obj.assignment = All(obj.agents, obj.data);
                 case 'serial'
                     try
-                        obj.assignment = Serial(obj,varargin{1},...
-                            varargin{2});
-                    catch
+                        obj.assignment = Serial(obj.agents, obj.data, ...
+                            varargin{1}, varargin{2});
+                    catch exception
+                        warning(exception)
                         warning('Inappropriate arguments for serial assignment.')
-                        obj.assignment = All(obj);
+                        obj.assignment = All(obj.agents, obj.data);
                     end
                 case 'serial_bci'
                     try
-                        obj.assignment = SerialWithBCI(obj,varargin{1},...
-                            varargin{2},varargin{3});
-                    catch
+                        obj.assignment = SerialWithBCI(obj.agents, ...
+                            obj.data,varargin{1}, varargin{2},varargin{3});
+                    catch exception
+                        warning(exception)
                         warning('Inappropriate arguments for serial assignment.')
-                        obj.assignment = All(obj);
+                        obj.assignment = All(obj.agents, obj.data);
                     end
                 case 'gap'
                     try
-                        obj.assignment = GAP(obj,varargin{1},varargin{2});
-                    catch
+                        obj.assignment = GAP(obj.agents, obj.data, ...
+                            varargin{1},varargin{2});
+                    catch exception
+                        warning(exception)
                         warning('Inappropriate arguments for gap assignment.')
-                        obj.assignment = All(obj);
+                        obj.assignment = All(obj.agents, obj.data);
                     end
                 otherwise
                     warning('Not a valid assignment type. Using all.');
-                    obj.assignment = All(obj);
+                    obj.assignment = All(obj.agents, obj.data);
             end
+            
+            obj.assignmentResultsReadyListener = ...
+                addlistener(obj.assignment,...
+                'AssignmentResultsUpdateEvent',...
+                @obj.handleAssignmentResultsReady);
+            
+            obj.assignmentCompleteListener = ...
+                addlistener(obj.assignment,...
+                'AssignmentCompleteEvent',...
+                @obj.handleAssignmentComplete);
+            
+        end
+
+        function handleAssignmentResultsReady(obj, src, event)
+            obj.results = obj.assignment.results;
+            raiseFusionUpdateEvent(obj);
+        end
+                
+        function handleAssignmentComplete(obj, src, event)
+            raiseExperimentCompleteEvent(obj);
         end
         
         function terminate(obj)
@@ -113,6 +155,8 @@ classdef Control < handle
         % GET.LABELS is the access command for labels. It will call the
         % given fusion function to determine the pseudo-labels in
         % real-time. Options: 'SML', 'sum', 'MV'.
+        %TODO where do we want this to occur
+        obj.results = obj.assignment.results;
             switch obj.fusion
                 case 'sml'
                     try
@@ -154,6 +198,14 @@ classdef Control < handle
                     return
             end
             Y = y;
+        end
+        
+        function raiseFusionUpdateEvent(obj)
+            notify(obj, 'FusionUpdateEvent');
+        end
+        
+        function raiseExperimentCompleteEvent(obj)
+            notify(obj, 'ExperimentCompleteEvent');
         end
         
         %------------------------------------------------------------------

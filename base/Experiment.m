@@ -4,7 +4,6 @@ classdef Experiment < matlab.mixin.SetGet & handle
 % communication with remote agents, and initialize the control.
     
     properties
-        Imdir % Directory of image database
         LocalPort % Permanent port of local control
         gui % GUI handle
         control % Control object
@@ -27,7 +26,7 @@ classdef Experiment < matlab.mixin.SetGet & handle
         %------------------------------------------------------------------
         % Class constructor:
         
-        function E = Experiment(X,Y,varargin)
+        function E = Experiment(images, labels, varargin)
         % EXPERIMENT is the class constructor which will set the data and
         % label properties (not necessary), instantiate a control object,
         % open a GUI, and scan for agents.
@@ -42,7 +41,6 @@ classdef Experiment < matlab.mixin.SetGet & handle
             
             % Set Property defaults
             E.LocalPort = 9000; % **Hard-coded**
-            E.Imdir = [];
           
             % Property defaults
             E.labels = [];
@@ -55,23 +53,19 @@ classdef Experiment < matlab.mixin.SetGet & handle
             
             % finish setting up the properties with the set command
             if nargin > 1
-                E.labels = Y(:);
-                if nargin == 3
-                    E.Imdir = dir(varargin);
-                    E.Imdir = E.Imdir(3:end);
-                elseif(nargin > 3)
+                E.labels = labels(:);
+                if(nargin >= 3)
                     set(E, varargin{1:end});
                 end
             end
             
             
             E.control = Control();
-            addData(E.control,X);
-            E.numImages = length(X);
+            E.control.addData(images);
+            E.numImages = length(images);
             % create the other object
-            E.listener = addlistener(E.control,'experimentComplete',...
+            E.listener = addlistener(E.control,'ExperimentCompleteEvent',...
                 @E.endExperiment);
-
            
             E.gui = experiment_interface(E);  
                        
@@ -102,6 +96,18 @@ classdef Experiment < matlab.mixin.SetGet & handle
             for i = 1:length(obj.control.agents)
                 fwrite(obj.control.agents{i}.socket,'test','uint16');
             end
+        end
+        
+        function beginExperiment(obj)
+            obj.control.beginExperiment();
+        end
+        
+        function changeAssignment(obj, varargin)
+            obj.control.changeAssignment(varargin);
+        end
+        
+        function setFusion(obj, fusion)
+            obj.control.fusion = fusion;
         end
         
         function endExperiment(obj,src,event)
@@ -147,12 +153,13 @@ classdef Experiment < matlab.mixin.SetGet & handle
             type = char(fread(obj.socket,obj.socket.bytesAvailable,'uchar'))';
             remoteHost = event.Data.DatagramAddress;
             remotePort = event.Data.DatagramPort;
-            createLocalAgentHere(type, remoteHost, remotePort);
+            
+            obj.createLocalAgentHere(type, remoteHost, remotePort);
         end
         
-        function createLocalAgentHere(obj, type, address, port)
-            addAgent(obj.control,type,remoteHost,...
-                remotePort);
+        function createLocalAgentHere(obj, type, remoteHost, remotePort)
+             localAgent = LocalAgent( type, remoteHost, remotePort);            
+             obj.control.addAgent(localAgent);
         end
               
         %------------------------------------------------------------------
@@ -162,19 +169,6 @@ classdef Experiment < matlab.mixin.SetGet & handle
         function set.LocalPort(obj, val)
             obj.LocalPort = val;
         end
-        
-        function set.Imdir(obj, val)
-        % SET.IMDIR val is the Directory name and will convert it to a 
-        % directory array
-            if(~isempty(val))
-               obj.Imdir = dir(val);
-               obj.Imdir = obj.Imdir(3:end);
-            else 
-                obj.Imdir = [];
-            end
-            
-        end
-        
     end
     
 end
